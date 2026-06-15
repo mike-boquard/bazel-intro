@@ -11,3 +11,7 @@ bazel_dep(name = "googletest", version = "1.15.2")
 
 # C++ utility library from BCR (demonstrates BCR dep usage)
 bazel_dep(name = "abseil-cpp", version = "20240722.0")
+
+# Non-BCR C++ dep loaded via module extension
+non_registry = use_extension("//third_party:extensions.bzl", "non_registry")
+use_repo(non_registry, "spdlog")

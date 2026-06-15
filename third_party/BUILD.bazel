@@ -1,0 +1,3 @@
+# This file makes third_party/ a Bazel package so that
+# //third_party:extensions.bzl and //third_party:spdlog.BUILD
+# are valid labels.
