@@ -1,0 +1,4 @@
+# C++17 required for abseil
+build --cxxopt=-std=c++17
+build --verbose_failures
+build --color=yes
