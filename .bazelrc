@@ -1,4 +1,10 @@
-# C++17 required for abseil
+# Build correctness
 build --cxxopt=-std=c++17
+
+# Build UX
 build --verbose_failures
 build --color=yes
+build --keep_going
+
+# Test UX
+test --test_output=errors
