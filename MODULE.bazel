@@ -15,3 +15,11 @@ bazel_dep(name = "abseil-cpp", version = "20240722.0")
 # Non-BCR C++ dep loaded via module extension
 non_registry = use_extension("//third_party:extensions.bzl", "non_registry")
 use_repo(non_registry, "spdlog")
+
+# Go toolchain and rules from BCR
+bazel_dep(name = "rules_go", version = "0.50.1")
+bazel_dep(name = "gazelle", version = "0.39.1")
+
+# Pin the Go SDK version
+go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.22.5")
