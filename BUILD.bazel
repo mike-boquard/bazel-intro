@@ -1,1 +1,37 @@
-# Root package — required for some label references, intentionally empty.
+# BUILD.bazel — root package for the bazel-intro workspace.
+#
+# Making the workspace root a Bazel package (by placing BUILD.bazel here)
+# enables top-level label references such as //:go.mod used by the Gazelle
+# go_deps extension in MODULE.bazel.
+#
+# This file also hosts the compile_commands refresh target, which generates
+# compile_commands.json so that clangd (the C++ language server) can resolve
+# workspace-rooted include paths like "cpp/greeter/greeter.h".
+#
+# Docs: https://bazel.build/concepts/build-files
+
+load(
+    "@hedron_compile_commands//:refresh_compile_commands.bzl",
+    "refresh_compile_commands",
+)
+
+# Regenerates compile_commands.json for all C++ targets.
+# Re-run this whenever you add or modify C++ source files.
+#
+# exclude_external_sources = True skips compilation actions for headers from
+# external workspaces (e.g. abseil-cpp), which avoids an upstream hedron issue
+# with -xc++-header actions that don't follow the expected argument format.
+# clangd still resolves external includes correctly via its own header search.
+#
+# Usage:
+#   bazel run //:refresh_compile_commands
+#   ./scripts/refresh_compile_commands.sh
+#
+# Docs: https://github.com/hedronvision/bazel-compile-commands-extractor
+refresh_compile_commands(
+    name = "refresh_compile_commands",
+    targets = {
+        "//cpp/...": "",
+    },
+    exclude_external_sources = True,
+)

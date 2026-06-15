@@ -33,7 +33,7 @@ bazel_dep(name = "abseil-cpp", version = "20240722.0")
 # extension defined in //third_party:extensions.bzl.  Each repo name must be
 # listed in use_repo() to be visible to targets in the build graph.
 non_registry = use_extension("//third_party:extensions.bzl", "non_registry")
-use_repo(non_registry, "spdlog")
+use_repo(non_registry, "spdlog", "hedron_compile_commands")
 
 # ── Go toolchain and rules (BCR) ──────────────────────────────────────────────
 # rules_go  — go_library / go_binary / go_test rules and the Go toolchain.

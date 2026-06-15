@@ -24,6 +24,17 @@ def _non_registry_deps_impl(ctx):
         build_file = Label("//third_party:spdlog.BUILD"),
     )
 
+    # hedron_compile_commands: generates compile_commands.json for clangd.
+    # Not in the BCR, so fetched from GitHub.  The repo ships its own BUILD
+    # file so no build_file injection is needed.
+    # Docs: https://github.com/hedronvision/bazel-compile-commands-extractor
+    http_archive(
+        name = "hedron_compile_commands",
+        url = "https://github.com/hedronvision/bazel-compile-commands-extractor/archive/abb61a688167623088f8768cc9264798df6a9d10.tar.gz",
+        sha256 = "1b08abffbfbe89f6dbee6a5b33753792e8004f6a36f37c0f72115bec86e68724",
+        strip_prefix = "bazel-compile-commands-extractor-abb61a688167623088f8768cc9264798df6a9d10",
+    )
+
 non_registry = module_extension(
     implementation = _non_registry_deps_impl,
 )
