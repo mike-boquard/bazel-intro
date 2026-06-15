@@ -1,3 +1,8 @@
-# This file makes third_party/ a Bazel package so that
-# //third_party:extensions.bzl and //third_party:spdlog.BUILD
-# are valid labels.
+# BUILD.bazel — package marker for the third_party/ directory.
+#
+# An empty BUILD.bazel makes third_party/ a Bazel package, which is required
+# for the labels //third_party:extensions.bzl and //third_party:spdlog.BUILD
+# to be valid.  Without this file, those labels would be unresolvable and
+# MODULE.bazel's use_extension() call would fail.
+#
+# Docs: https://bazel.build/concepts/labels

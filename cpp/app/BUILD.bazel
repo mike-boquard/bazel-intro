@@ -1,10 +1,19 @@
+# BUILD.bazel — C++ greeter executable.
+#
+# cc_binary links main.cc with two dependencies:
+#   //cpp/greeter  — the internal greeter library defined in this workspace.
+#   @spdlog        — the spdlog logging library, a non-BCR dep fetched via
+#                    the module extension in //third_party:extensions.bzl.
+#
+# Run with: bazel run //cpp/app:app
+# Docs: https://bazel.build/reference/be/c-cpp#cc_binary
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 
 cc_binary(
     name = "app",
     srcs = ["main.cc"],
     deps = [
-        "//cpp/greeter",
-        "@spdlog//:spdlog",
+        "//cpp/greeter",     # internal dep — workspace-rooted label
+        "@spdlog//:spdlog",  # non-BCR dep via //third_party:extensions.bzl
     ],
 )

@@ -1,11 +1,22 @@
+# BUILD.bazel — C++ greeter library and unit tests.
+#
+# cc_library compiles greeter.cc into a reusable library target.  It depends
+# on abseil-cpp (a BCR module) for the absl::StrCat string utility.
+#
+# cc_test compiles greeter_test.cc and links it with the greeter library and
+# GoogleTest's gtest_main, which supplies main() so the test file itself
+# doesn't need one.  Run tests with: bazel test //cpp/greeter:greeter_test
+#
+# Docs: https://bazel.build/reference/be/c-cpp#cc_library
+#       https://bazel.build/reference/be/c-cpp#cc_test
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 
 cc_library(
     name = "greeter",
     srcs = ["greeter.cc"],
     hdrs = ["greeter.h"],
-    deps = ["@abseil-cpp//absl/strings"],
-    visibility = ["//visibility:public"],
+    deps = ["@abseil-cpp//absl/strings"],  # BCR dep; provides absl::StrCat
+    visibility = ["//visibility:public"],  # allows //cpp/app to depend on this
 )
 
 cc_test(
@@ -13,6 +24,6 @@ cc_test(
     srcs = ["greeter_test.cc"],
     deps = [
         ":greeter",
-        "@googletest//:gtest_main",
+        "@googletest//:gtest_main",  # BCR dep; provides TEST(), EXPECT_EQ(), and main()
     ],
 )

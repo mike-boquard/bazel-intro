@@ -1,10 +1,23 @@
+# BUILD.bazel — Go greeter executable.
+#
+# go_binary compiles main.go into a standalone binary.  It depends on two
+# targets:
+#   //go/greeter                    — internal library from this workspace.
+#   @com_github_fatih_color//:color — github.com/fatih/color, a third-party
+#                                     Go package fetched from the Go module
+#                                     proxy via go.mod and Gazelle.  The label
+#                                     follows Gazelle's naming convention:
+#                                     @com_<reversed-host>_<user>_<repo>//:pkg
+#
+# Run with: bazel run //go/app:app
+# Docs: https://github.com/bazelbuild/rules_go/blob/main/docs/go/core/rules.md
 load("@rules_go//go:def.bzl", "go_binary")
 
 go_binary(
     name = "app",
     srcs = ["main.go"],
     deps = [
-        "//go/greeter",
-        "@com_github_fatih_color//:color",
+        "//go/greeter",                    # internal library
+        "@com_github_fatih_color//:color", # third-party via go.mod + Gazelle
     ],
 )

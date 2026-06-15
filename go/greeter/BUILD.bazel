@@ -1,3 +1,15 @@
+# BUILD.bazel — Go greeter library and unit tests.
+#
+# go_library compiles greeter.go into a library importable by other Go targets.
+# The importpath must match the Go module path declared in go.mod plus the
+# relative directory path within that module.
+#
+# go_test compiles the external test package (package greeter_test) and links
+# it against the greeter library.  The external package convention (suffix _test)
+# prevents import cycles and is idiomatic in Go.
+#
+# Run tests with: bazel test //go/greeter:greeter_test
+# Docs: https://github.com/bazelbuild/rules_go/blob/main/docs/go/core/rules.md
 load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
