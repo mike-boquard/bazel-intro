@@ -61,6 +61,8 @@ third_party/
   spdlog.BUILD          # Build rules for spdlog (header-only)
 scripts/
   refresh_compile_commands.sh   # Regenerate compile_commands.json for clangd
+  refresh_rust_project.sh       # Regenerate rust-project.json for rust-analyzer
+  format_cpp.sh                 # Format all C++ files using clang-format
 ```
 
 ## Build
@@ -233,6 +235,25 @@ repo):
   "rust-analyzer.linkedProjects": ["rust-project.json"]
 }
 ```
+
+## C++ formatting (clang-format)
+
+C++ source files are formatted with clang-format 18.1.8, fetched from the
+BCR-downloaded LLVM toolchain — no system clang-format required. Style is
+defined in `.clang-format` at the workspace root (LLVM style, 4-space indent,
+100-column limit).
+
+```bash
+# Format all C++ files in-place
+./scripts/format_cpp.sh
+
+# Check mode — exit 1 if any file would change (useful in CI)
+./scripts/format_cpp.sh --check
+```
+
+Both forms invoke `bazel run //:clang-format` under the hood, which ensures
+the exact same binary is used everywhere regardless of what is installed on
+the host.
 
 ## Adding a new Go dependency
 

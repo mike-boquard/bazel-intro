@@ -1,0 +1,6 @@
+---
+# LLVM style — 4-space indent, matches the existing code in cpp/.
+# Run: ./scripts/format_cpp.sh
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 100
