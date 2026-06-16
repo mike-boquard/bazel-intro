@@ -13,11 +13,20 @@ Bazel version automatically using `.bazelversion`:
 
 ```bash
 brew install bazelisk                      # macOS
+```
 
-# Linux (amd64)
-sudo curl -fsSL -o /usr/local/bin/bazel \
+```bash
+# Linux (amd64) — install to ~/.local/bin (no sudo needed)
+mkdir -p ~/.local/bin
+curl -fsSL -o ~/.local/bin/bazel \
   https://github.com/bazelbuild/bazelisk/releases/download/v1.29.0/bazelisk-linux-amd64
-sudo chmod +x /usr/local/bin/bazel
+chmod +x ~/.local/bin/bazel
+
+# Make sure ~/.local/bin is on your PATH (add to ~/.bashrc or ~/.zshrc)
+export PATH="$HOME/.local/bin:$PATH"
+
+# Verify
+bazel version
 ```
 
 No separate Go or Python installation is needed — Bazel downloads and caches
