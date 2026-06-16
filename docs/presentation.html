@@ -86,12 +86,13 @@
   <h2>What we'll cover</h2>
   <ol style="font-size:.85em; line-height:2.1;">
     <li>Why Bazel — what problem it actually solves</li>
+    <li>How Bazel works — JVM server, build phases, sandboxed actions</li>
     <li>Core concepts: workspace, package, target, rule</li>
     <li>Bzlmod — modern dependency management</li>
     <li>C++, Go, Python, and Rust — same patterns, different rules</li>
     <li>Cross-language with Proto / gRPC</li>
     <li>Testing, caching (vs Ninja/CMake), and querying the build graph</li>
-    <li>FAQ — compiler pinning, migration, Go, performance, rough edges</li>
+    <li>FAQ — compiler pinning, clang-format, migration, Go, performance, rough edges</li>
   </ol>
 </section>
 
@@ -121,7 +122,36 @@
   <p class="dim" style="margin-top:.3em; font-size:.65em;">* C++ is the exception: Bazel defaults to the host compiler (system GCC / Xcode Clang), so compiler version varies across machines. Pin an exact LLVM release with <code>toolchains_llvm</code> to close this gap — see the FAQ slide.</p>
 </section>
 
-<!-- 4 ── CONCEPTS ────────────────────────────────────────────────────────── -->
+<!-- 4 ── HOW BAZEL WORKS ─────────────────────────────────────────────────── -->
+<section>
+  <h2>How Bazel works</h2>
+  <div class="three-col" style="margin-bottom:.5em;">
+    <div class="card">
+      <h4>Persistent JVM server</h4>
+      <p>The <code>bazel</code> CLI is a thin client. The first invocation starts a long-running JVM process that holds the analysis cache in memory. Subsequent builds skip JVM startup and re-analysis — only changed targets rebuild.</p>
+    </div>
+    <div class="card">
+      <h4>Three phases</h4>
+      <p><strong>Loading</strong> — reads <code>BUILD.bazel</code> files, evaluates Starlark rules.<br/>
+         <strong>Analysis</strong> — instantiates the action graph (DAG of commands).<br/>
+         <strong>Execution</strong> — runs only the actions whose inputs changed.</p>
+    </div>
+    <div class="card">
+      <h4>Sandboxed actions</h4>
+      <p>Every build action and test runs in an isolated environment — only its declared inputs are visible. On Linux: Linux namespaces (like a container). On macOS: <code>sandbox-exec</code>. Undeclared deps are a hard error.</p>
+    </div>
+  </div>
+  <pre><code class="language-bash" data-trim>
+# Phase breakdown visible with --explain
+bazel build //... --explain=/tmp/build.log
+
+# What actions Bazel will run (the execution plan)
+bazel aquery //cpp/app:app
+  </code></pre>
+  <p class="dim" style="margin-top:.3em;">Tests run in the same sandbox — no network, no ambient filesystem. A test that passes locally but fails in CI is almost always an undeclared dependency.</p>
+</section>
+
+<!-- 5 ── CONCEPTS ────────────────────────────────────────────────────────── -->
 <section>
   <h2>Key vocabulary</h2>
   <div class="chain">
@@ -135,7 +165,7 @@
   <code style="color:var(--accent);">//cpp/greeter</code> ≡ <code style="color:var(--accent);">//cpp/greeter:greeter</code></p>
 </section>
 
-<!-- 5 ── WHAT IS BZLMOD ──────────────────────────────────────────────────── -->
+<!-- 6 ── WHAT IS BZLMOD ────────────────────────────────────────────────────  -->
 <section>
   <h2>What is Bzlmod?</h2>
   <p class="small" style="margin-bottom:.5em;">Bzlmod is Bazel's dependency management system, introduced in Bazel 5 and the default since Bazel 6. It replaces the older <code>WORKSPACE</code> file.</p>
@@ -162,7 +192,7 @@
   <p class="dim" style="margin-top:.5em;">Think of it as the difference between manually editing <code>node_modules</code> vs using <code>package.json</code> with <code>npm install</code>.</p>
 </section>
 
-<!-- 6 ── MODULE.bazel ────────────────────────────────────────────────────── -->
+<!-- 7 ── MODULE.bazel ──────────────────────────────────────────────────────  -->
 <section>
   <h2>MODULE.bazel — in practice</h2>
   <p class="small" style="margin-bottom:.6em;">Every external dependency the repo uses is declared here. <code>bazel_dep</code> is like a <code>package.json</code> entry — versioned and checksum-verified.</p>
@@ -183,7 +213,7 @@ use_repo(non_registry, "spdlog", "hedron_compile_commands")
   <p class="dim" style="margin-top:.4em;">This repo also declares <code>rules_python</code>, <code>rules_rust</code>, <code>toolchains_llvm</code>, <code>gazelle</code>, and their associated toolchain extensions — the above is a representative subset.</p>
 </section>
 
-<!-- 7 ── BCR ─────────────────────────────────────────────────────────────── -->
+<!-- 8 ── BCR ───────────────────────────────────────────────────────────────  -->
 <section>
   <h2>Bazel Central Registry</h2>
   <p class="small">The BCR (<a href="https://registry.bazel.build" style="color:var(--accent);">registry.bazel.build</a>) is Bazel's package registry — like npm or crates.io, but for build rules and libraries.</p>
@@ -209,7 +239,7 @@ use_repo(non_registry, "spdlog", "hedron_compile_commands")
   </div>
 </section>
 
-<!-- 8 ── NON-BCR ────────────────────────────────────────────────────────── -->
+<!-- 9 ── NON-BCR ──────────────────────────────────────────────────────────  -->
 <section>
   <h2>Non-BCR dep: spdlog</h2>
   <p class="small" style="margin-bottom:.6em;">Fetched directly from GitHub via a <em>module extension</em> in <code>third_party/extensions.bzl</code>:</p>
@@ -230,7 +260,7 @@ non_registry = module_extension(
   <p class="dim" style="margin-top:.6em;"><code>build_file</code> injects our own Bazel rules into the downloaded archive — needed because spdlog doesn't ship a <code>BUILD.bazel</code>.</p>
 </section>
 
-<!-- 9 ── C++ BUILD FILE ──────────────────────────────────────────────────── -->
+<!-- 10 ── C++ BUILD FILE ────────────────────────────────────────────────────  -->
 <section>
   <h2>C++ — BUILD file</h2>
   <pre><code class="language-python" data-trim>
@@ -254,7 +284,7 @@ cc_test(
   <p class="dim" style="margin-top:.6em;"><code>@abseil-cpp//absl/strings</code> — the <code>@</code> prefix means an external repo. Labels without <code>@</code> are internal to this workspace.</p>
 </section>
 
-<!-- 10 ── C++ COMMANDS ───────────────────────────────────────────────────── -->
+<!-- 11 ── C++ COMMANDS ─────────────────────────────────────────────────────  -->
 <section>
   <h2>C++ — commands</h2>
   <pre><code class="language-bash" data-trim>
@@ -273,7 +303,7 @@ bazel test //cpp/...               # all C++ tests
   <p class="small" style="margin-top:.5em;">Bazel downloads the compiler toolchain, abseil, spdlog, and googletest automatically on first build — nothing needs to be installed manually.</p>
 </section>
 
-<!-- 11 ── GO ─────────────────────────────────────────────────────────────── -->
+<!-- 12 ── GO ───────────────────────────────────────────────────────────────  -->
 <section>
   <h2>Go — same pattern, different rules</h2>
   <p class="small" style="margin-bottom:.6em;">Go packages come from <code>go.mod</code> (the Go module proxy), not the BCR. Gazelle reads <code>go.mod</code> and generates BUILD files.</p>
@@ -295,7 +325,7 @@ go_binary(
   Use <code>bazel run @rules_go//go</code> rather than system <code>go</code> so the same SDK version manages the module.</p>
 </section>
 
-<!-- 12 ── PROTO FILE ─────────────────────────────────────────────────────── -->
+<!-- 13 ── PROTO FILE ───────────────────────────────────────────────────────  -->
 <section>
   <h2>Cross-language: one .proto, two languages</h2>
   <p class="small" style="margin-bottom:.6em;">A single <code>proto/greeter.proto</code> defines the contract for both C++ and Go:</p>
@@ -319,7 +349,7 @@ message HelloReply   { string message = 1; }
   </div>
 </section>
 
-<!-- 13 ── PROTO BUILD ────────────────────────────────────────────────────── -->
+<!-- 14 ── PROTO BUILD ──────────────────────────────────────────────────────  -->
 <section>
   <h2>Proto build targets</h2>
   <p class="small" style="margin-bottom:.4em;"><code>proto/BUILD.bazel</code> turns the single <code>.proto</code> file into three usable targets — one for each language plus the language-neutral base:</p>
@@ -346,7 +376,7 @@ go_proto_library(name = "greeter_go_proto",
   </code></pre>
 </section>
 
-<!-- 14 ── SERVER / CLIENT ───────────────────────────────────────────────── -->
+<!-- 15 ── SERVER / CLIENT ─────────────────────────────────────────────────  -->
 <section>
   <h2>C++ server &amp; Go client</h2>
   <div class="two-col">
@@ -386,7 +416,7 @@ bazel run //go/client:client -- localhost:50051 Alice  # terminal 2 → Hello, A
   </code></pre>
 </section>
 
-<!-- 15 ── INTEGRATION TEST ──────────────────────────────────────────────── -->
+<!-- 16 ── INTEGRATION TEST ────────────────────────────────────────────────  -->
 <section>
   <h2>Integration test</h2>
   <p class="small" style="margin-bottom:.6em;">A shell script wired with <code>sh_test</code>. Bazel builds both binaries before running the script — no manual orchestration.</p>
@@ -408,7 +438,7 @@ sh_test(
   <p class="dim" style="margin-top:.5em;">The script starts the server, polls <code>nc -z localhost 50051</code>, calls the client, and asserts <code>"Hello, World!"</code>.</p>
 </section>
 
-<!-- 16 ── TESTING ────────────────────────────────────────────────────────── -->
+<!-- 17 ── TESTING ──────────────────────────────────────────────────────────  -->
 <section>
   <h2>Testing</h2>
   <pre><code class="language-bash" data-trim>
@@ -439,7 +469,7 @@ bazel test //... --nocache_test_results
   </div>
 </section>
 
-<!-- 17 ── GOOGLETEST INTEGRATION ──────────────────────────────────────────── -->
+<!-- 18 ── GOOGLETEST INTEGRATION ────────────────────────────────────────────  -->
 <section>
   <h2>GoogleTest integration</h2>
   <p class="small" style="margin-bottom:.5em;">GoogleTest is a BCR dependency — Bazel downloads and builds it from source. No system install, no <code>find_package</code>.</p>
@@ -487,7 +517,7 @@ TEST(GreeterTest, HelloWithName) {
   </div>
 </section>
 
-<!-- 18 ── CACHING COMPARISON ────────────────────────────────────────────── -->
+<!-- 19 ── CACHING COMPARISON ──────────────────────────────────────────────  -->
 <section>
   <h2>Caching: Ninja/CMake vs Bazel</h2>
   <table class="cmp-table">
@@ -530,7 +560,7 @@ TEST(GreeterTest, HelloWithName) {
   <p class="dim" style="margin-top:.5em;">The mtime problem is why "clean builds" are a thing in CMake projects. Bazel doesn't need them.</p>
 </section>
 
-<!-- 19 ── CACHING CONFIG ──────────────────────────────────────────────────── -->
+<!-- 20 ── CACHING CONFIG ────────────────────────────────────────────────────  -->
 <section>
   <h2>Caching: in practice</h2>
   <div class="two-col">
@@ -558,7 +588,7 @@ build --disk_cache=~/.cache/bazel/disk-cache
   </p>
 </section>
 
-<!-- 20 ── QUERY ──────────────────────────────────────────────────────────── -->
+<!-- 21 ── QUERY ────────────────────────────────────────────────────────────  -->
 <section>
   <h2>Querying the build graph</h2>
   <div class="three-col" style="margin-bottom:.8em; font-size:.82em;">
@@ -588,7 +618,7 @@ bazel aquery 'mnemonic("CppCompile", //cpp/greeter:greeter)' \
   </code></pre>
 </section>
 
-<!-- 21 ── ERGONOMICS ─────────────────────────────────────────────────────── -->
+<!-- 22 ── ERGONOMICS ───────────────────────────────────────────────────────  -->
 <section>
   <h2>Dev ergonomics: IDE support</h2>
   <div class="two-col" style="gap:.8em;">
@@ -620,7 +650,7 @@ bazel run //:gen_rust_project
   </div>
 </section>
 
-<!-- 22 ── PYTHON HERMETICITY ─────────────────────────────────────────────── -->
+<!-- 23 ── PYTHON HERMETICITY ───────────────────────────────────────────────  -->
 <section>
   <h2>Hermetic Python with <code>rules_python</code></h2>
   <p class="small" style="margin-bottom:.5em;">The same hermetic story applies to Python: pinned interpreter + pinned packages with content hashes.</p>
@@ -665,7 +695,7 @@ py_binary(name = "demo", srcs = ["main.py"],
   </div>
 </section>
 
-<!-- 23 ── RUST ───────────────────────────────────────────────────────────── -->
+<!-- 24 ── RUST ─────────────────────────────────────────────────────────────  -->
 <section>
   <h2>Rust with <code>rules_rust</code></h2>
   <p class="small" style="margin-bottom:.5em;">Same hermetic story: pinned rustc + crates from crates.io via <code>crate_universe</code>. No system Rust required.</p>
@@ -721,7 +751,7 @@ rust_test(name = "greeter_test", crate = ":greeter")
   </div>
 </section>
 
-<!-- 24 ── TAKEAWAYS ─────────────────────────────────────────────────────── -->
+<!-- 25 ── TAKEAWAYS ───────────────────────────────────────────────────────  -->
 <section>
   <h2>Takeaways</h2>
   <div style="font-size:.82em; line-height:2.1; margin-top:.4em;">
@@ -738,13 +768,13 @@ rust_test(name = "greeter_test", crate = ":greeter")
      FAQ SECTION
      ══════════════════════════════════════════════════════════════════════════ -->
 
-<!-- 25 ── FAQ DIVIDER ────────────────────────────────────────────────────── -->
+<!-- 26 ── FAQ DIVIDER ──────────────────────────────────────────────────────  -->
 <section class="center">
   <h2 style="font-size:1.6em; color:#fff;">FAQ</h2>
   <p style="color:var(--accent); font-size:.9em; margin-top:.4em;">Common questions from teams adopting Bazel</p>
 </section>
 
-<!-- 26 ── FAQ: PINNING A COMPILER ───────────────────────────────────────── -->
+<!-- 27 ── FAQ: PINNING A COMPILER ─────────────────────────────────────────  -->
 <section>
   <h2>FAQ: Can I pin a specific Clang version?</h2>
   <p class="small">Yes — <code>toolchains_llvm</code> from the BCR downloads an exact pre-built LLVM release. This repo uses LLVM 18.1.8 for Linux CI; macOS uses Xcode Clang (pre-built arm64 binaries top out at LLVM 17 on Apple Silicon).</p>
@@ -767,7 +797,7 @@ bazel build //cpp/...                  # macOS: uses Xcode Clang
   </code></pre>
 </section>
 
-<!-- 27 ── FAQ: CLANG-FORMAT ─────────────────────────────────────────────── -->
+<!-- 28 ── FAQ: CLANG-FORMAT ───────────────────────────────────────────────  -->
 <section>
   <h2>FAQ: Code formatting with clang-format</h2>
   <p class="small">The same <code>toolchains_llvm</code> download that provides the compiler also exposes <strong>clang-format 18.1.8</strong> as a first-class Bazel target — no system install needed, same binary on every machine and in CI.</p>
@@ -791,7 +821,7 @@ ColumnLimit: 100
   <p class="dim" style="margin-top:.4em;">Note: <code>bazel run</code> executes in a sandbox with a different working directory, so the script passes absolute paths to clang-format. The <code>//:clang-format</code> alias in <code>BUILD.bazel</code> is a convenience pointer to <code>@llvm_toolchain//:clang-format</code>.</p>
 </section>
 
-<!-- 28 ── FAQ: COMPILER FLAGS & SANITIZERS ──────────────────────────────── -->
+<!-- 29 ── FAQ: COMPILER FLAGS & SANITIZERS ────────────────────────────────  -->
 <section>
   <h2>FAQ: Custom flags &amp; sanitizers</h2>
   <p class="small" style="margin-bottom:.4em;"><strong>Three scopes for compiler flags:</strong></p>
@@ -820,7 +850,7 @@ bazel test --config=asan //...
   </code></pre>
 </section>
 
-<!-- 29 ── FAQ: CROSS-COMPILATION ────────────────────────────────────────── -->
+<!-- 30 ── FAQ: CROSS-COMPILATION ──────────────────────────────────────────  -->
 <section>
   <h2>FAQ: Cross-compilation</h2>
   <p class="small">Bazel has first-class platform support. Define a platform target and select it at build time:</p>
@@ -840,7 +870,7 @@ bazel build --platforms=//platforms:linux_arm64 //cpp/app:app
   <p class="dim" style="margin-top:.4em;"><code>toolchains_llvm</code> supports cross-compilation out of the box — configure it with <code>exec_arch</code> and <code>target_arch</code>. This is generally cleaner than CMake toolchain files because the platform is a first-class build graph node, not an external file sourced before analysis.</p>
 </section>
 
-<!-- 30 ── FAQ: MIGRATING FROM CMAKE ─────────────────────────────────────── -->
+<!-- 31 ── FAQ: MIGRATING FROM CMAKE ───────────────────────────────────────  -->
 <section>
   <h2>FAQ: Migrating from CMake</h2>
   <div class="two-col" style="margin-bottom:.5em;">
@@ -866,7 +896,7 @@ cmake(
   <p class="dim" style="margin-top:.3em;">Go migration is easier — Gazelle generates BUILD files from <code>go.mod</code> automatically. C++ requires more manual work per package.</p>
 </section>
 
-<!-- 31 ── FAQ: SYSTEM & VENDORED DEPS ───────────────────────────────────── -->
+<!-- 32 ── FAQ: SYSTEM & VENDORED DEPS ─────────────────────────────────────  -->
 <section>
   <h2>FAQ: System libraries &amp; vendored deps</h2>
   <p class="small" style="margin-bottom:.4em;"><strong>System libraries</strong> (OpenSSL, zlib, libcurl…) — three options, in order of preference:</p>
@@ -894,7 +924,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   </code></pre>
 </section>
 
-<!-- 32 ── FAQ: GO SPECIFICS ─────────────────────────────────────────────── -->
+<!-- 33 ── FAQ: GO SPECIFICS ───────────────────────────────────────────────  -->
 <section>
   <h2>FAQ: Go specifics</h2>
   <div class="three-col" style="margin-bottom:.5em;">
@@ -914,7 +944,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   <p class="dim">Gazelle handles the common case well — it reads <code>import</code> statements and generates BUILD files automatically. Edge cases (build tags, internal packages) require manual tuning.</p>
 </section>
 
-<!-- 33 ── FAQ: PERFORMANCE & REMOTE EXECUTION ───────────────────────────── -->
+<!-- 34 ── FAQ: PERFORMANCE & REMOTE EXECUTION ─────────────────────────────  -->
 <section>
   <h2>FAQ: Performance &amp; scale</h2>
   <div class="two-col" style="margin-bottom:.5em;">
@@ -930,7 +960,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   <p class="small"><strong>Parallelism:</strong> <code>--jobs=N</code> controls concurrency (default = CPU count). Bazel schedules more aggressively than Ninja because it holds the full dependency graph and knows exactly which actions are independent.</p>
 </section>
 
-<!-- 34 ── FAQ: ROUGH EDGES ───────────────────────────────────────────────── -->
+<!-- 35 ── FAQ: ROUGH EDGES ─────────────────────────────────────────────────  -->
 <section>
   <h2>FAQ: Honest rough edges</h2>
   <div class="three-col">
@@ -950,7 +980,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   <p class="dim" style="margin-top:.5em;">These are real. Worth setting expectations with the team upfront rather than discovering them in week two.</p>
 </section>
 
-<!-- 35 ── Q&A ────────────────────────────────────────────────────────────── -->
+<!-- 36 ── Q&A ──────────────────────────────────────────────────────────────  -->
 <section class="center">
   <h2>Questions?</h2>
   <p class="dim" style="margin-top:.8em;">github.com/mike-boquard/bazel-intro</p>
