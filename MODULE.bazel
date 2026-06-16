@@ -45,7 +45,7 @@ bazel_dep(name = "grpc", version = "1.69.0")
 # extension defined in //third_party:extensions.bzl.  Each repo name must be
 # listed in use_repo() to be visible to targets in the build graph.
 non_registry = use_extension("//third_party:extensions.bzl", "non_registry")
-use_repo(non_registry, "spdlog", "hedron_compile_commands")
+use_repo(non_registry, "hedron_compile_commands", "spdlog")
 
 # ── Go toolchain and rules (BCR) ──────────────────────────────────────────────
 # rules_go  — go_library / go_binary / go_test rules and the Go toolchain.
