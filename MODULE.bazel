@@ -130,3 +130,32 @@ use_repo(
     # //go/client BUILD files, so it must appear in use_repo.
     "org_golang_google_grpc",
 )
+
+# ── Rust toolchain and rules (BCR) ────────────────────────────────────────────
+# rules_rust provides rust_library / rust_binary / rust_test rules and downloads
+# a hermetic Rust toolchain (rustc + cargo, no system Rust required).
+# crate_universe fetches crates from crates.io — analogous to go_deps for Go.
+#
+# To add a new crate:
+#   1. Add a crate.spec() call below
+#   2. bazel mod tidy
+#
+# BCR: https://registry.bazel.build/modules/rules_rust
+RUST_EDITION = "2021"
+RUST_VERSION = "1.85.0"
+
+bazel_dep(name = "rules_rust", version = "0.70.0")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = RUST_EDITION,
+    versions = [RUST_VERSION],
+)
+use_repo(rust, "rust_toolchains")
+register_toolchains("@rust_toolchains//:all")
+
+# ── Rust crate dependencies (crates.io) ───────────────────────────────────────
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.spec(package = "colored", version = "2")
+crate.from_specs()
+use_repo(crate, "crates")

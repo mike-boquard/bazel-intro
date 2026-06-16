@@ -1,0 +1,6 @@
+use colored::Colorize;
+
+fn main() {
+    let name = std::env::args().nth(1).unwrap_or_else(|| "World".to_string());
+    println!("{}", greeter::hello(&name).green());
+}
