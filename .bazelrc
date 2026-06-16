@@ -6,5 +6,11 @@ build --verbose_failures
 build --color=yes
 build --keep_going
 
+# CI / caching
+# Enables Bazel's local disk cache. When ~/.cache/bazel is restored by
+# actions/cache in CI, Bazel reuses previous build outputs and skips
+# re-downloading external deps.
+build --disk_cache=~/.cache/bazel/disk-cache
+
 # Test UX
 test --test_output=errors
