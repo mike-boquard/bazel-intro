@@ -63,11 +63,12 @@ python3 -m http.server 8000 --directory .
 | 24 | Takeaways |
 | 25 | FAQ divider |
 | 26 | FAQ: Pinning a Clang version (toolchains_llvm, --config=clang) |
-| 27 | FAQ: Custom flags & sanitizers |
-| 28 | FAQ: Cross-compilation |
-| 29 | FAQ: Migrating from CMake |
-| 30 | FAQ: System & vendored deps |
-| 31 | FAQ: Go specifics |
-| 32 | FAQ: Performance & remote execution |
-| 33 | FAQ: Rough edges |
-| 34 | Q&A |
+| 27 | FAQ: clang-format via @llvm_toolchain — format_cpp.sh, .clang-format, //:clang-format alias |
+| 28 | FAQ: Custom flags & sanitizers |
+| 29 | FAQ: Cross-compilation |
+| 30 | FAQ: Migrating from CMake |
+| 31 | FAQ: System & vendored deps |
+| 32 | FAQ: Go specifics |
+| 33 | FAQ: Performance & remote execution |
+| 34 | FAQ: Rough edges |
+| 35 | Q&A |

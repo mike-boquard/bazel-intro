@@ -767,7 +767,31 @@ bazel build //cpp/...                  # macOS: uses Xcode Clang
   </code></pre>
 </section>
 
-<!-- 27 ── FAQ: COMPILER FLAGS & SANITIZERS ──────────────────────────────── -->
+<!-- 27 ── FAQ: CLANG-FORMAT ─────────────────────────────────────────────── -->
+<section>
+  <h2>FAQ: Code formatting with clang-format</h2>
+  <p class="small">The same <code>toolchains_llvm</code> download that provides the compiler also exposes <strong>clang-format 18.1.8</strong> as a first-class Bazel target — no system install needed, same binary on every machine and in CI.</p>
+  <pre><code class="language-bash" data-trim>
+# Format all C++ files in-place
+./scripts/format_cpp.sh
+
+# Check mode — exits 1 if any file would change (useful in CI)
+./scripts/format_cpp.sh --check
+  </code></pre>
+  <pre><code class="language-bash" data-trim>
+# Or invoke the target directly with an absolute path
+bazel run //:clang-format -- -i /abs/path/to/file.cc
+  </code></pre>
+  <p class="small" style="margin-top:.4em;">Style is declared in <code>.clang-format</code> at the workspace root:</p>
+  <pre><code class="language-yaml" data-trim>
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 100
+  </code></pre>
+  <p class="dim" style="margin-top:.4em;">Note: <code>bazel run</code> executes in a sandbox with a different working directory, so the script passes absolute paths to clang-format. The <code>//:clang-format</code> alias in <code>BUILD.bazel</code> is a convenience pointer to <code>@llvm_toolchain//:clang-format</code>.</p>
+</section>
+
+<!-- 28 ── FAQ: COMPILER FLAGS & SANITIZERS ──────────────────────────────── -->
 <section>
   <h2>FAQ: Custom flags &amp; sanitizers</h2>
   <p class="small" style="margin-bottom:.4em;"><strong>Three scopes for compiler flags:</strong></p>
@@ -796,7 +820,7 @@ bazel test --config=asan //...
   </code></pre>
 </section>
 
-<!-- 28 ── FAQ: CROSS-COMPILATION ────────────────────────────────────────── -->
+<!-- 29 ── FAQ: CROSS-COMPILATION ────────────────────────────────────────── -->
 <section>
   <h2>FAQ: Cross-compilation</h2>
   <p class="small">Bazel has first-class platform support. Define a platform target and select it at build time:</p>
@@ -816,7 +840,7 @@ bazel build --platforms=//platforms:linux_arm64 //cpp/app:app
   <p class="dim" style="margin-top:.4em;"><code>toolchains_llvm</code> supports cross-compilation out of the box — configure it with <code>exec_arch</code> and <code>target_arch</code>. This is generally cleaner than CMake toolchain files because the platform is a first-class build graph node, not an external file sourced before analysis.</p>
 </section>
 
-<!-- 29 ── FAQ: MIGRATING FROM CMAKE ─────────────────────────────────────── -->
+<!-- 30 ── FAQ: MIGRATING FROM CMAKE ─────────────────────────────────────── -->
 <section>
   <h2>FAQ: Migrating from CMake</h2>
   <div class="two-col" style="margin-bottom:.5em;">
@@ -842,7 +866,7 @@ cmake(
   <p class="dim" style="margin-top:.3em;">Go migration is easier — Gazelle generates BUILD files from <code>go.mod</code> automatically. C++ requires more manual work per package.</p>
 </section>
 
-<!-- 30 ── FAQ: SYSTEM & VENDORED DEPS ───────────────────────────────────── -->
+<!-- 31 ── FAQ: SYSTEM & VENDORED DEPS ───────────────────────────────────── -->
 <section>
   <h2>FAQ: System libraries &amp; vendored deps</h2>
   <p class="small" style="margin-bottom:.4em;"><strong>System libraries</strong> (OpenSSL, zlib, libcurl…) — three options, in order of preference:</p>
@@ -870,7 +894,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   </code></pre>
 </section>
 
-<!-- 31 ── FAQ: GO SPECIFICS ─────────────────────────────────────────────── -->
+<!-- 32 ── FAQ: GO SPECIFICS ─────────────────────────────────────────────── -->
 <section>
   <h2>FAQ: Go specifics</h2>
   <div class="three-col" style="margin-bottom:.5em;">
@@ -890,7 +914,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   <p class="dim">Gazelle handles the common case well — it reads <code>import</code> statements and generates BUILD files automatically. Edge cases (build tags, internal packages) require manual tuning.</p>
 </section>
 
-<!-- 32 ── FAQ: PERFORMANCE & REMOTE EXECUTION ───────────────────────────── -->
+<!-- 33 ── FAQ: PERFORMANCE & REMOTE EXECUTION ───────────────────────────── -->
 <section>
   <h2>FAQ: Performance &amp; scale</h2>
   <div class="two-col" style="margin-bottom:.5em;">
@@ -906,7 +930,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   <p class="small"><strong>Parallelism:</strong> <code>--jobs=N</code> controls concurrency (default = CPU count). Bazel schedules more aggressively than Ninja because it holds the full dependency graph and knows exactly which actions are independent.</p>
 </section>
 
-<!-- 33 ── FAQ: ROUGH EDGES ───────────────────────────────────────────────── -->
+<!-- 34 ── FAQ: ROUGH EDGES ───────────────────────────────────────────────── -->
 <section>
   <h2>FAQ: Honest rough edges</h2>
   <div class="three-col">
@@ -926,7 +950,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   <p class="dim" style="margin-top:.5em;">These are real. Worth setting expectations with the team upfront rather than discovering them in week two.</p>
 </section>
 
-<!-- 34 ── Q&A ────────────────────────────────────────────────────────────── -->
+<!-- 35 ── Q&A ────────────────────────────────────────────────────────────── -->
 <section class="center">
   <h2>Questions?</h2>
   <p class="dim" style="margin-top:.8em;">github.com/mike-boquard/bazel-intro</p>
