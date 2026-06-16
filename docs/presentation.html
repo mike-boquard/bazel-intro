@@ -159,31 +159,30 @@
 
 <!-- 6 ── MODULE.bazel ────────────────────────────────────────────────────── -->
 <section>
-  <h2>MODULE.bazel &amp; Bzlmod</h2>
-  <p class="small" style="margin-bottom:.6em;">Bazel's modern dependency system — replaces the legacy <code>WORKSPACE</code> file.</p>
+  <h2>MODULE.bazel — in practice</h2>
+  <p class="small" style="margin-bottom:.6em;">Every external dependency the repo uses is declared here. <code>bazel_dep</code> is like a <code>package.json</code> entry — versioned and checksum-verified.</p>
   <pre><code class="language-python" data-trim>
 module(name = "bazel_intro", version = "0.0.1")
 
-# ── BCR (Bazel Central Registry) deps ──────────────────────────────
+# ── BCR deps (selected) ─────────────────────────────────────────────
 bazel_dep(name = "googletest",  version = "1.15.2")
 bazel_dep(name = "abseil-cpp",  version = "20240722.0")
 bazel_dep(name = "rules_go",    version = "0.50.1")
 bazel_dep(name = "protobuf",    version = "29.3")
 bazel_dep(name = "grpc",        version = "1.69.0")
 
-# ── Non-BCR dep via module extension ───────────────────────────────
+# ── Non-BCR deps via module extension ──────────────────────────────
 non_registry = use_extension("//third_party:extensions.bzl", "non_registry")
-use_repo(non_registry, "spdlog")
+use_repo(non_registry, "spdlog", "hedron_compile_commands")
   </code></pre>
-  <p class="dim" style="margin-top:.6em;"><code>bazel_dep</code> is like a <code>package.json</code> dependency — versioned, checksum-verified, resolved by Bazel against the registry.</p>
+  <p class="dim" style="margin-top:.4em;">This repo also declares <code>bazel_skylib</code>, <code>rules_cc</code>, <code>gazelle</code>, and Go SDK/module extensions — the above is a representative subset.</p>
 </section>
 
-<!-- 6 ── BCR ─────────────────────────────────────────────────────────────── -->
+<!-- 7 ── BCR ─────────────────────────────────────────────────────────────── -->
 <section>
   <h2>Bazel Central Registry</h2>
   <p class="small">The BCR (<a href="https://registry.bazel.build" style="color:var(--accent);">registry.bazel.build</a>) is Bazel's package registry — like npm or crates.io, but for build rules and libraries.</p>
-  <br/>
-  <div class="two-col">
+  <div class="two-col" style="margin-top:.5em;">
     <div class="card">
       <h4>BCR deps</h4>
       <ul>
@@ -205,7 +204,7 @@ use_repo(non_registry, "spdlog")
   </div>
 </section>
 
-<!-- 7 ── NON-BCR ────────────────────────────────────────────────────────── -->
+<!-- 8 ── NON-BCR ────────────────────────────────────────────────────────── -->
 <section>
   <h2>Non-BCR dep: spdlog</h2>
   <p class="small" style="margin-bottom:.6em;">Fetched directly from GitHub via a <em>module extension</em> in <code>third_party/extensions.bzl</code>:</p>
@@ -226,7 +225,7 @@ non_registry = module_extension(
   <p class="dim" style="margin-top:.6em;"><code>build_file</code> injects our own Bazel rules into the downloaded archive — needed because spdlog doesn't ship a <code>BUILD.bazel</code>.</p>
 </section>
 
-<!-- 8 ── C++ BUILD FILE ──────────────────────────────────────────────────── -->
+<!-- 9 ── C++ BUILD FILE ──────────────────────────────────────────────────── -->
 <section>
   <h2>C++ — BUILD file</h2>
   <pre><code class="language-python" data-trim>
@@ -250,7 +249,7 @@ cc_test(
   <p class="dim" style="margin-top:.6em;"><code>@abseil-cpp//absl/strings</code> — the <code>@</code> prefix means an external repo. Labels without <code>@</code> are internal to this workspace.</p>
 </section>
 
-<!-- 9 ── C++ COMMANDS ────────────────────────────────────────────────────── -->
+<!-- 10 ── C++ COMMANDS ───────────────────────────────────────────────────── -->
 <section>
   <h2>C++ — commands</h2>
   <pre><code class="language-bash" data-trim>
@@ -269,7 +268,7 @@ bazel test //cpp/...               # all C++ tests
   <p class="small" style="margin-top:.5em;">Bazel downloads the compiler toolchain, abseil, spdlog, and googletest automatically on first build — nothing needs to be installed manually.</p>
 </section>
 
-<!-- 10 ── GO ─────────────────────────────────────────────────────────────── -->
+<!-- 11 ── GO ─────────────────────────────────────────────────────────────── -->
 <section>
   <h2>Go — same pattern, different rules</h2>
   <p class="small" style="margin-bottom:.6em;">Go packages come from <code>go.mod</code> (the Go module proxy), not the BCR. Gazelle reads <code>go.mod</code> and generates BUILD files.</p>
@@ -287,10 +286,11 @@ go_binary(
 )
   </code></pre>
   <p class="dim" style="margin-top:.5em;">Gazelle's naming convention: <code>github.com/fatih/color</code> → <code>@com_github_fatih_color</code>.<br/>
-  Workflow: <code>go get</code> → <code>bazel mod tidy</code> → <code>bazel run @gazelle//:gazelle</code></p>
+  Workflow: <code>bazel run @rules_go//go -- get pkg@v1.2.3</code> → <code>bazel mod tidy</code> → <code>bazel run @gazelle//:gazelle</code><br/>
+  Use <code>bazel run @rules_go//go</code> rather than system <code>go</code> so the same SDK version manages the module.</p>
 </section>
 
-<!-- 11 ── PROTO FILE ─────────────────────────────────────────────────────── -->
+<!-- 12 ── PROTO FILE ─────────────────────────────────────────────────────── -->
 <section>
   <h2>Cross-language: one .proto, two languages</h2>
   <p class="small" style="margin-bottom:.6em;">A single <code>proto/greeter.proto</code> defines the contract for both C++ and Go:</p>
@@ -314,9 +314,10 @@ message HelloReply   { string message = 1; }
   </div>
 </section>
 
-<!-- 12 ── PROTO BUILD ────────────────────────────────────────────────────── -->
+<!-- 13 ── PROTO BUILD ────────────────────────────────────────────────────── -->
 <section>
   <h2>Proto build targets</h2>
+  <p class="small" style="margin-bottom:.4em;"><code>proto/BUILD.bazel</code> turns the single <code>.proto</code> file into three usable targets — one for each language plus the language-neutral base:</p>
   <pre><code class="language-python" data-trim>
 # proto/BUILD.bazel
 load("@grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
@@ -340,7 +341,7 @@ go_proto_library(name = "greeter_go_proto",
   </code></pre>
 </section>
 
-<!-- 13 ── SERVER / CLIENT ───────────────────────────────────────────────── -->
+<!-- 14 ── SERVER / CLIENT ───────────────────────────────────────────────── -->
 <section>
   <h2>C++ server &amp; Go client</h2>
   <div class="two-col">
@@ -380,7 +381,7 @@ bazel run //go/client:client -- localhost:50051 Alice  # terminal 2 → Hello, A
   </code></pre>
 </section>
 
-<!-- 14 ── INTEGRATION TEST ──────────────────────────────────────────────── -->
+<!-- 15 ── INTEGRATION TEST ──────────────────────────────────────────────── -->
 <section>
   <h2>Integration test</h2>
   <p class="small" style="margin-bottom:.6em;">A shell script wired with <code>sh_test</code>. Bazel builds both binaries before running the script — no manual orchestration.</p>
@@ -402,7 +403,7 @@ sh_test(
   <p class="dim" style="margin-top:.5em;">The script starts the server, polls <code>nc -z localhost 50051</code>, calls the client, and asserts <code>"Hello, World!"</code>.</p>
 </section>
 
-<!-- 15 ── TESTING ────────────────────────────────────────────────────────── -->
+<!-- 16 ── TESTING ────────────────────────────────────────────────────────── -->
 <section>
   <h2>Testing</h2>
   <pre><code class="language-bash" data-trim>
@@ -427,7 +428,7 @@ bazel test //test/integration:greeter_integration_test
   </div>
 </section>
 
-<!-- 16 ── CACHING COMPARISON ────────────────────────────────────────────── -->
+<!-- 17 ── CACHING COMPARISON ────────────────────────────────────────────── -->
 <section>
   <h2>Caching: Ninja/CMake vs Bazel</h2>
   <table class="cmp-table">
@@ -470,7 +471,7 @@ bazel test //test/integration:greeter_integration_test
   <p class="dim" style="margin-top:.5em;">The mtime problem is why "clean builds" are a thing in CMake projects. Bazel doesn't need them.</p>
 </section>
 
-<!-- 17 ── CACHING CONFIG ──────────────────────────────────────────────────── -->
+<!-- 18 ── CACHING CONFIG ──────────────────────────────────────────────────── -->
 <section>
   <h2>Caching: in practice</h2>
   <div class="two-col">
@@ -498,7 +499,7 @@ build --disk_cache=~/.cache/bazel/disk-cache
   </p>
 </section>
 
-<!-- 17 ── QUERY ──────────────────────────────────────────────────────────── -->
+<!-- 19 ── QUERY ──────────────────────────────────────────────────────────── -->
 <section>
   <h2>Querying the build graph</h2>
   <div class="three-col" style="margin-bottom:.8em; font-size:.82em;">
@@ -528,7 +529,7 @@ bazel aquery 'mnemonic("CppCompile", //cpp/greeter:greeter)' \
   </code></pre>
 </section>
 
-<!-- 18 ── ERGONOMICS ─────────────────────────────────────────────────────── -->
+<!-- 20 ── ERGONOMICS ─────────────────────────────────────────────────────── -->
 <section>
   <h2>Dev ergonomics: clangd</h2>
   <p class="small" style="margin-bottom:.7em;">Bazel uses workspace-rooted includes (<code>"cpp/greeter/greeter.h"</code>). clangd can't resolve these without a compilation database.</p>
@@ -550,7 +551,7 @@ bazel run //:refresh_compile_commands
   </div>
 </section>
 
-<!-- 19 ── TAKEAWAYS ──────────────────────────────────────────────────────── -->
+<!-- 21 ── TAKEAWAYS ──────────────────────────────────────────────────────── -->
 <section>
   <h2>Takeaways</h2>
   <div style="font-size:.82em; line-height:2.1; margin-top:.4em;">
@@ -567,30 +568,32 @@ bazel run //:refresh_compile_commands
      FAQ SECTION
      ══════════════════════════════════════════════════════════════════════════ -->
 
-<!-- 20 ── FAQ DIVIDER ────────────────────────────────────────────────────── -->
+<!-- 22 ── FAQ DIVIDER ────────────────────────────────────────────────────── -->
 <section class="center">
   <h2 style="font-size:1.6em; color:#fff;">FAQ</h2>
   <p style="color:var(--accent); font-size:.9em; margin-top:.4em;">Common questions from C++ and Go teams</p>
 </section>
 
-<!-- 21 ── FAQ: PINNING A COMPILER ───────────────────────────────────────── -->
+<!-- 23 ── FAQ: PINNING A COMPILER ───────────────────────────────────────── -->
 <section>
   <h2>FAQ: Can I pin a specific Clang version?</h2>
   <p class="small">Yes — use <code>toolchains_llvm</code> from the BCR. It downloads and pins an exact LLVM release; no system Clang required.</p>
   <pre><code class="language-python" data-trim>
-# MODULE.bazel
+# MODULE.bazel  (check BCR for current toolchains_llvm version)
 bazel_dep(name = "toolchains_llvm", version = "1.0.0")
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
-llvm.toolchain(llvm_version = "17.0.6")
+llvm.toolchain(llvm_version = "17.0.6")   # pin the LLVM release
 use_repo(llvm, "llvm_toolchain")
 
+# register_toolchains makes this toolchain available for Bazel to select
+# when resolving the C++ toolchain for any cc_* rule.
 register_toolchains("@llvm_toolchain//:cc-toolchain-x86_64-linux")
   </code></pre>
-  <p class="dim" style="margin-top:.4em;">Without a registered toolchain, Bazel falls back to the system <code>gcc</code>/<code>g++</code> — the one case where Bazel isn't hermetic by default. Registering a toolchain fixes this.</p>
+  <p class="dim" style="margin-top:.4em;">Without a registered toolchain, Bazel falls back to the system <code>gcc</code>/<code>g++</code> — the one place where the default setup isn't fully hermetic. This fixes it.</p>
 </section>
 
-<!-- 22 ── FAQ: COMPILER FLAGS & SANITIZERS ──────────────────────────────── -->
+<!-- 24 ── FAQ: COMPILER FLAGS & SANITIZERS ──────────────────────────────── -->
 <section>
   <h2>FAQ: Custom flags &amp; sanitizers</h2>
   <p class="small" style="margin-bottom:.4em;"><strong>Three scopes for compiler flags:</strong></p>
