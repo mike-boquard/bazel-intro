@@ -14,9 +14,9 @@ Bazel version automatically using `.bazelversion`:
 brew install bazelisk                      # macOS
 
 # Linux (amd64)
-curl -fsSL -o /usr/local/bin/bazel \
+sudo curl -fsSL -o /usr/local/bin/bazel \
   https://github.com/bazelbuild/bazelisk/releases/download/v1.29.0/bazelisk-linux-amd64
-chmod +x /usr/local/bin/bazel
+sudo chmod +x /usr/local/bin/bazel
 ```
 
 No separate Go installation is needed — Bazel downloads and caches the Go SDK.
