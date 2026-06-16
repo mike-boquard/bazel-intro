@@ -63,7 +63,7 @@ bazel query 'rdeps(//..., //cpp/greeter:greeter)'
 ### Find transitive deps of a target (workspace targets only)
 
 ```bash
-bazel query 'deps(//cpp/app:app)' --output label | grep -v '^@'
+bazel query 'deps(//cpp/app:app)' --output label 2>/dev/null | grep -v '^@'
 ```
 
 ```
@@ -187,6 +187,8 @@ or understand why an incremental build is or isn't reusing a cached action.
 
 ### List all actions for a target
 
+The `--output=text` format is verbose — each action includes its inputs, outputs, and full command line. Piping through `grep 'Mnemonic:'` extracts just the action type names for a quick overview:
+
 ```bash
 bazel aquery '//cpp/greeter:greeter' --output=text 2>/dev/null | grep 'Mnemonic:'
 ```
@@ -241,4 +243,4 @@ Useful for debugging unexpected compiler flags or verifying that `-std=c++17`
 | `bazel query 'filter("pat", //...)'` | Targets whose label matches a regex | Finding targets by name pattern |
 | `bazel cquery '//...'` | Targets with their config hashes | Seeing how configs differ across targets |
 | `bazel aquery 'mnemonic("X", T)'` | Actions of type X for target T | Inspecting compiler/linker flags |
-| `--output=label \| graph \| build` | Alternative output formats | Machine-readable or dot-graph output |
+| `--output=label`, `--output=graph`, `--output=build` | Alternative output formats | `label` for scripting, `graph` for Graphviz visualization, `build` to see reconstructed BUILD syntax |
