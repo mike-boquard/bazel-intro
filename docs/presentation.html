@@ -101,7 +101,7 @@
   <p class="small" style="margin-bottom:.8em;">You already have <em>make</em>, <em>cmake</em>, <em>go build</em>, <em>cargo</em>…</p>
   <div class="three-col">
     <div class="card">
-      <h4>Hermetic</h4>
+      <h4>Hermetic *</h4>
       <p>Builds don't read from <code>/usr/include</code> or depend on ambient env. Same inputs → same outputs, always.</p>
     </div>
     <div class="card">
@@ -114,6 +114,7 @@
     </div>
   </div>
   <p class="dim" style="margin-top:.5em;">The caching story alone pays off on large codebases. CI and dev machines share the same artifact store.</p>
+  <p class="dim" style="margin-top:.3em; font-size:.65em;">* C++ is the exception: Bazel defaults to the host compiler (system GCC / Xcode Clang), so compiler version varies across machines. Pin an exact LLVM release with <code>toolchains_llvm</code> to close this gap — see the FAQ slide.</p>
 </section>
 
 <!-- 4 ── CONCEPTS ────────────────────────────────────────────────────────── -->
