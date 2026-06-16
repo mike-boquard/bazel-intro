@@ -75,6 +75,27 @@ bazel test //cpp/greeter:greeter_test
 bazel test //go/greeter:greeter_test
 ```
 
+## Proto / gRPC
+
+A shared `.proto` file in `proto/` generates gRPC stubs for both C++ and Go,
+demonstrating cross-language communication with a single contract.
+
+```bash
+# Run the C++ server (listens on :50051)
+bazel run //cpp/server:server
+
+# In another terminal: call it from the Go client
+bazel run //go/client:client
+bazel run //go/client:client -- localhost:50051 Alice
+
+# Run the integration test (starts server + client automatically)
+bazel test //test/integration:greeter_integration_test
+```
+
+The proto definition lives in `proto/greeter.proto` and its `BUILD.bazel` produces
+three targets: `greeter_proto` (language-neutral), `greeter_cc_grpc` (C++ stubs),
+and `greeter_go_proto` (Go stubs).
+
 ## clangd / IDE support
 
 Generate `compile_commands.json` so clangd can resolve C++ includes:
@@ -111,3 +132,6 @@ bazel run @gazelle//:gazelle -- go/
 | `spdlog` | non-BCR (http_archive) | Logging in C++ binary |
 | `hedron_compile_commands` | non-BCR (http_archive) | `compile_commands.json` for clangd |
 | `github.com/fatih/color` | Go module proxy | Colorized output in Go binary |
+| `protobuf` | BCR | Proto codegen and `proto_library` rule |
+| `grpc` | BCR | C++ gRPC runtime and `cc_grpc_library` codegen |
+| `google.golang.org/grpc` | Go module proxy | Go gRPC runtime |
