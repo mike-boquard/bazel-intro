@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building with Bazel</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/black.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/plugin/highlight/monokai.css" />
+
+  <style>
+    :root {
+      --accent: #4ec9b0;
+      --accent2: #ce9178;
+      --dim: #888;
+    }
+
+    .reveal h1, .reveal h2, .reveal h3 { text-transform: none; }
+
+    .reveal h2 { color: var(--accent); }
+
+    .reveal pre { width: 100%; box-shadow: 0 0 20px rgba(0,0,0,.5); }
+    .reveal pre code { font-size: 0.72em; line-height: 1.5; max-height: 440px; }
+
+    .reveal .slides section { text-align: left; }
+    .reveal .slides section.center { text-align: center; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1em; }
+
+    .card {
+      background: rgba(255,255,255,.06);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      padding: .6em .9em;
+    }
+    .card h4 { margin: 0 0 .3em; color: var(--accent); font-size: .85em; }
+    .card p, .card ul { margin: 0; font-size: .75em; line-height: 1.5; }
+    .card ul { padding-left: 1.2em; }
+
+    .tag {
+      display: inline-block;
+      background: var(--accent);
+      color: #1b1b1b;
+      border-radius: 3px;
+      padding: .05em .4em;
+      font-size: .65em;
+      font-weight: bold;
+      vertical-align: middle;
+      margin-left: .3em;
+    }
+    .tag.orange { background: var(--accent2); }
+
+    .chain {
+      font-family: monospace;
+      font-size: .8em;
+      line-height: 2;
+      background: rgba(255,255,255,.05);
+      border-radius: 4px;
+      padding: .8em 1.2em;
+    }
+
+    .cmd {
+      font-family: monospace;
+      background: #1e1e1e;
+      border-radius: 3px;
+      padding: .15em .5em;
+      font-size: .85em;
+      color: var(--accent);
+    }
+
+    .dim { color: var(--dim); font-size: .85em; }
+
+    /* slide-number tweak */
+    .reveal .slide-number { background: rgba(0,0,0,.4); font-size: .6em; }
+
+    /* progress bar */
+    .reveal .progress { color: var(--accent); }
+
+    /* title slide */
+    .title-slide h1 { font-size: 2em; color: #fff; margin-bottom: .3em; }
+    .title-slide p  { color: #aaa; font-size: 1em; margin: .2em 0; }
+    .title-slide .sub { color: var(--accent); font-size: 1.1em; margin-top: .8em; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ─────────────────────────────── TITLE ─────────────────────────────── -->
+<section class="center title-slide">
+  <h1>Building with Bazel</h1>
+  <p class="sub">One build system. Any language. Reproducible everywhere.</p>
+  <br/>
+  <p class="dim">github.com/mike-boquard/bazel-intro</p>
+</section>
+
+<!-- ─────────────────────────────── AGENDA ────────────────────────────── -->
+<section>
+  <h2>What we'll cover</h2>
+  <ol style="font-size:.85em; line-height:2;">
+    <li>Why Bazel — what problem it actually solves</li>
+    <li>Core concepts: workspace, package, target, rule</li>
+    <li>Bzlmod — modern dependency management</li>
+    <li>C++ and Go — same patterns, different rules</li>
+    <li>Cross-language with Proto / gRPC</li>
+    <li>Testing, caching, and querying the build graph</li>
+  </ol>
+</section>
+
+<!-- ─────────────────────────────── WHY BAZEL ─────────────────────────── -->
+<section>
+  <section>
+    <h2>Why Bazel?</h2>
+    <p>You already have <em>make</em>, <em>cmake</em>, <em>go build</em>, <em>cargo</em>…</p>
+    <br/>
+    <div class="three-col">
+      <div class="card">
+        <h4>Hermetic</h4>
+        <p>Builds don't depend on your environment — same inputs → same outputs, always.</p>
+      </div>
+      <div class="card">
+        <h4>Incremental</h4>
+        <p>Tracks changes by content hash, not timestamps. Only rebuilds what actually changed.</p>
+      </div>
+      <div class="card">
+        <h4>Polyglot</h4>
+        <p>C++, Go, Java, Python, Proto — one build graph, one command to run them all.</p>
+      </div>
+    </div>
+    <br/>
+    <p class="dim">The caching story alone pays off on large codebases. CI restores the same cache that dev machines write.</p>
+  </section>
+
+  <section>
+    <h2>What "hermetic" means in practice</h2>
+    <div class="two-col">
+      <div>
+        <p><strong style="color:#f44;">Traditional build</strong></p>
+        <ul style="font-size:.8em; line-height:1.8;">
+          <li>Reads from <code>/usr/include</code></li>
+          <li>Depends on installed gcc version</li>
+          <li>"Works on my machine"</li>
+          <li>Rebuild triggers unpredictable</li>
+        </ul>
+      </div>
+      <div>
+        <p><strong style="color:var(--accent);">Bazel build</strong></p>
+        <ul style="font-size:.8em; line-height:1.8;">
+          <li>All deps declared explicitly</li>
+          <li>Toolchain fetched and pinned</li>
+          <li>Sandboxed — no ambient env</li>
+          <li>Cache key = content hash of inputs</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</section>
+
+<!-- ─────────────────────────────── CONCEPTS ──────────────────────────── -->
+<section>
+  <h2>Key vocabulary</h2>
+  <div class="chain">
+    <strong>Workspace</strong> — the repo root; contains <code>MODULE.bazel</code><br/>
+    &nbsp;&nbsp;└─ <strong>Package</strong> — any directory with a <code>BUILD.bazel</code><br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ <strong>Target</strong> — a named buildable thing (<code>//cpp/greeter:greeter</code>)<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ <strong>Rule</strong> — the type of target (<code>cc_library</code>, <code>go_binary</code>, …)
+  </div>
+  <br/>
+  <p style="font-size:.8em;">A label like <span class="cmd">//cpp/greeter:greeter_test</span> means:<br/>
+  &nbsp;&nbsp;<code>//cpp/greeter</code> = package path from workspace root<br/>
+  &nbsp;&nbsp;<code>:greeter_test</code> = target name within that package</p>
+</section>
+
+<!-- ─────────────────────────────── MODULE.bazel ─────────────────────── -->
+<section>
+  <section>
+    <h2>Bzlmod &amp; MODULE.bazel</h2>
+    <p>Bazel's modern dependency system — replaces the legacy <code>WORKSPACE</code> file.</p>
+    <pre><code class="language-python" data-trim>
+# MODULE.bazel — every external dep declared here
+
+module(name = "bazel_intro", version = "0.0.1")
+
+# ── BCR deps ───────────────────────────────────────────────
+bazel_dep(name = "googletest",  version = "1.15.2")
+bazel_dep(name = "abseil-cpp",  version = "20240722.0")
+bazel_dep(name = "rules_go",    version = "0.50.1")
+bazel_dep(name = "protobuf",    version = "29.3")
+bazel_dep(name = "grpc",        version = "1.69.0")
+
+# ── Non-BCR dep (http_archive via module extension) ────────
+non_registry = use_extension("//third_party:extensions.bzl", "non_registry")
+use_repo(non_registry, "spdlog")
+    </code></pre>
+  </section>
+
+  <section>
+    <h2>Bazel Central Registry</h2>
+    <p>The BCR is Bazel's package registry — like npm or crates.io, but for build rules and libraries.</p>
+    <br/>
+    <div class="two-col">
+      <div class="card">
+        <h4>registry.bazel.build</h4>
+        <ul>
+          <li>Version-pinned modules</li>
+          <li>Checksum-verified downloads</li>
+          <li>Dependency resolution by Bazel</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Non-BCR deps</h4>
+        <ul>
+          <li>Use a <em>module extension</em></li>
+          <li><code>http_archive()</code> with explicit SHA256</li>
+          <li>Inject a BUILD file if needed</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Non-BCR dep: spdlog</h2>
+    <p>Fetched directly from GitHub via a <em>module extension</em>:</p>
+    <pre><code class="language-python" data-trim>
+# third_party/extensions.bzl
+
+def _non_registry_deps_impl(ctx):
+    http_archive(
+        name = "spdlog",
+        url  = "https://github.com/gabime/spdlog/archive/refs/tags/v1.14.1.tar.gz",
+        sha256 = "1586508029a7d0670dfcb2d97575dcdc242d3868a...",
+        strip_prefix = "spdlog-1.14.1",
+        build_file = Label("//third_party:spdlog.BUILD"),
+    )
+
+non_registry = module_extension(
+    implementation = _non_registry_deps_impl,
+)
+    </code></pre>
+    <p class="dim">The <code>build_file</code> argument injects our own BUILD rules into the external repo — needed when the library doesn't ship a Bazel build file.</p>
+  </section>
+</section>
+
+<!-- ─────────────────────────────── C++ ───────────────────────────────── -->
+<section>
+  <section>
+    <h2>C++ — library, binary, tests</h2>
+    <div class="chain" style="font-size:.75em;">
+      cpp/<br/>
+      &nbsp;&nbsp;greeter/&nbsp;&nbsp;&nbsp;<span style="color:var(--dim);">← cc_library (uses abseil from BCR)</span><br/>
+      &nbsp;&nbsp;app/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--dim);">← cc_binary (uses spdlog, non-BCR)</span><br/>
+      &nbsp;&nbsp;server/&nbsp;&nbsp;&nbsp;<span style="color:var(--dim);">← cc_binary (gRPC server)</span>
+    </div>
+    <br/>
+    <pre><code class="language-python" data-trim>
+# cpp/greeter/BUILD.bazel
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+cc_library(
+    name = "greeter",
+    srcs = ["greeter.cc"],
+    hdrs = ["greeter.h"],
+    deps = ["@abseil-cpp//absl/strings"],   # BCR dep
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "greeter_test",
+    srcs = ["greeter_test.cc"],
+    deps = [":greeter", "@googletest//:gtest_main"],
+)
+    </code></pre>
+  </section>
+
+  <section>
+    <h2>Running C++ targets</h2>
+    <pre><code class="language-bash" data-trim>
+# Build
+bazel build //cpp/greeter
+bazel build //cpp/app:app
+
+# Run
+bazel run //cpp/app:app
+bazel run //cpp/app:app -- Alice
+
+# Test
+bazel test //cpp/greeter:greeter_test --test_output=errors
+    </code></pre>
+    <br/>
+    <p style="font-size:.8em;">Labels follow the pattern <span class="cmd">//package:target</span><br/>
+    When the target name matches the directory name, you can omit it: <span class="cmd">//cpp/greeter</span></p>
+  </section>
+</section>
+
+<!-- ─────────────────────────────── GO ────────────────────────────────── -->
+<section>
+  <section>
+    <h2>Go — same pattern, different rules</h2>
+    <div class="two-col">
+      <div>
+        <p><strong>Go deps come from go.mod</strong></p>
+        <ul style="font-size:.78em; line-height:1.8;">
+          <li>Go packages live on the Go module proxy, not the BCR</li>
+          <li><code>go.mod</code> at the workspace root</li>
+          <li>Gazelle reads it and generates BUILD files</li>
+        </ul>
+      </div>
+      <div>
+        <p><strong>Workflow</strong></p>
+        <pre><code class="language-bash" data-trim>
+# Add a package
+bazel run @rules_go//go -- \
+  get github.com/fatih/color@v1.17.0
+
+# Sync use_repo entries
+bazel mod tidy
+
+# Regenerate BUILD files
+bazel run @gazelle//:gazelle
+        </code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Go BUILD file</h2>
+    <pre><code class="language-python" data-trim>
+# go/app/BUILD.bazel
+load("@rules_go//go:def.bzl", "go_binary")
+
+go_binary(
+    name = "app",
+    srcs = ["main.go"],
+    deps = [
+        "//go/greeter",                    # workspace-internal
+        "@com_github_fatih_color//:color", # from go.mod via Gazelle
+    ],
+)
+    </code></pre>
+    <p class="dim">Gazelle generates these files automatically from <code>import</code> statements. The <code>@com_github_fatih_color</code> label is Gazelle's naming convention for Go modules.</p>
+  </section>
+</section>
+
+<!-- ─────────────────────────────── PROTO / GRPC ─────────────────────── -->
+<section>
+  <section>
+    <h2>Cross-language: Proto / gRPC</h2>
+    <p>One <code>.proto</code> file drives code generation for <em>both</em> C++ and Go.</p>
+    <pre><code class="language-protobuf" data-trim>
+// proto/greeter.proto
+syntax = "proto3";
+package greeter;
+option go_package = "github.com/mike-boquard/bazel-intro/proto/greeter";
+
+service GreeterService {
+  rpc SayHello (HelloRequest) returns (HelloReply);
+}
+
+message HelloRequest { string name    = 1; }
+message HelloReply   { string message = 1; }
+    </code></pre>
+  </section>
+
+  <section>
+    <h2>The proto build chain</h2>
+    <pre><code class="language-python" data-trim>
+# proto/BUILD.bazel
+
+# Language-neutral source of truth
+proto_library(name = "greeter_proto", srcs = ["greeter.proto"])
+
+# C++ message classes  (greeter.pb.h / .cc)
+cc_proto_library(name = "greeter_cc_proto", deps = [":greeter_proto"])
+
+# C++ service stubs  (greeter.grpc.pb.h / .cc)
+cc_grpc_library(name = "greeter_cc_grpc",
+                srcs = [":greeter_proto"], grpc_only = True,
+                deps = [":greeter_cc_proto"])
+
+# Go messages + service stubs in one step
+go_proto_library(name = "greeter_go_proto",
+                 compilers = ["@rules_go//proto:go_grpc"],
+                 importpath = "github.com/mike-boquard/bazel-intro/proto/greeter",
+                 proto = ":greeter_proto")
+    </code></pre>
+    <div class="chain" style="font-size:.7em; margin-top:.8em;">
+      greeter_proto → greeter_cc_proto → greeter_cc_grpc &nbsp;→&nbsp; <span style="color:var(--accent);">cpp/server</span><br/>
+      greeter_proto → greeter_go_proto &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→&nbsp; <span style="color:var(--accent);">go/client</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>C++ server / Go client</h2>
+    <div class="two-col">
+      <div>
+        <p style="font-size:.8em;"><strong>cpp/server/BUILD.bazel</strong></p>
+        <pre><code class="language-python" data-trim>
+cc_binary(
+    name = "server",
+    srcs = ["main.cc"],
+    deps = [
+        "//proto:greeter_cc_grpc",
+        "//proto:greeter_cc_proto",
+        "@grpc//:grpc++",
+    ],
+)
+        </code></pre>
+      </div>
+      <div>
+        <p style="font-size:.8em;"><strong>go/client/BUILD.bazel</strong></p>
+        <pre><code class="language-python" data-trim>
+go_binary(
+    name = "client",
+    srcs = ["main.go"],
+    pure = "on",
+    deps = [
+        "//proto:greeter_go_proto",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//credentials/insecure",
+    ],
+)
+        </code></pre>
+      </div>
+    </div>
+    <br/>
+    <pre><code class="language-bash" data-trim>
+bazel run //cpp/server:server           # terminal 1: listens on :50051
+bazel run //go/client:client -- localhost:50051 Alice   # terminal 2
+# → Hello, Alice!
+    </code></pre>
+  </section>
+</section>
+
+<!-- ─────────────────────────────── TESTING ───────────────────────────── -->
+<section>
+  <section>
+    <h2>Testing</h2>
+    <pre><code class="language-bash" data-trim>
+# Run everything
+bazel test //...
+
+# Unit tests
+bazel test //cpp/greeter:greeter_test
+bazel test //go/greeter:greeter_test
+
+# Cross-language integration test
+bazel test //test/integration:greeter_integration_test
+    </code></pre>
+    <br/>
+    <p class="dim">Bazel caches test results too — unchanged targets don't re-run. Use <code>--cache_test_results=no</code> to force a re-run.</p>
+  </section>
+
+  <section>
+    <h2>Integration test as sh_test</h2>
+    <p>A shell script wired together with <code>sh_test</code> — Bazel builds both binaries before running the script.</p>
+    <pre><code class="language-python" data-trim>
+# test/integration/BUILD.bazel
+sh_test(
+    name = "greeter_integration_test",
+    srcs = ["greeter_test.sh"],
+    args = [
+        "$(rootpath //cpp/server:server)",   # resolved at test time
+        "$(rootpath //go/client:client)",
+    ],
+    data = [
+        "//cpp/server:server",
+        "//go/client:client",
+    ],
+)
+    </code></pre>
+    <p class="dim"><code>$(rootpath ...)</code> expands to the binary's location inside the test sandbox's runfiles tree.</p>
+  </section>
+</section>
+
+<!-- ─────────────────────────────── CACHING ───────────────────────────── -->
+<section>
+  <h2>Caching</h2>
+  <div class="two-col">
+    <div>
+      <p><strong>Local disk cache</strong></p>
+      <pre><code class="language-ini" data-trim>
+# .bazelrc
+build --disk_cache=~/.cache/bazel/disk-cache
+      </code></pre>
+      <p style="font-size:.78em;">Content-addressed. If you switch branches and come back, Bazel reuses cached outputs without recompiling.</p>
+    </div>
+    <div>
+      <p><strong>CI (GitHub Actions)</strong></p>
+      <pre><code class="language-yaml" data-trim>
+- uses: actions/cache@v4
+  with:
+    path: ~/.cache/bazel
+    key: ${{ runner.os }}-bazel-${{ hashFiles('MODULE.bazel.lock') }}
+      </code></pre>
+      <p style="font-size:.78em;">The same disk cache directory is restored from the Actions cache. CI shares the same artifact store as local dev.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────── QUERY ─────────────────────────────── -->
+<section>
+  <h2>Querying the build graph</h2>
+  <div class="three-col" style="font-size:.82em;">
+    <div class="card">
+      <h4>bazel query</h4>
+      <p>Static graph — reads BUILD files, no analysis phase needed.</p>
+    </div>
+    <div class="card">
+      <h4>bazel cquery</h4>
+      <p>Configured graph — understands <code>select()</code>, platforms, and build flags.</p>
+    </div>
+    <div class="card">
+      <h4>bazel aquery</h4>
+      <p>Action graph — shows the actual compiler/linker commands that would run.</p>
+    </div>
+  </div>
+  <br/>
+  <pre><code class="language-bash" data-trim>
+# Who uses //cpp/greeter?
+bazel query 'rdeps(//..., //cpp/greeter:greeter)'
+# → //cpp/app:app  //cpp/greeter:greeter_test
+
+# Why does //cpp/app depend on abseil?
+bazel query 'somepath(//cpp/app:app, @abseil-cpp//absl/strings:strings)'
+# → //cpp/app:app → //cpp/greeter:greeter → @abseil-cpp//absl/strings:strings
+
+# What compiler flags are used?
+bazel aquery 'mnemonic("CppCompile", //cpp/greeter:greeter)' \
+  --output=text 2>/dev/null | grep -A1 "Command Line"
+  </code></pre>
+</section>
+
+<!-- ─────────────────────────────── ERGONOMICS ────────────────────────── -->
+<section>
+  <h2>Dev ergonomics: clangd support</h2>
+  <p>Bazel uses workspace-rooted includes (<code>"cpp/greeter/greeter.h"</code>), which clangd can't resolve without help.</p>
+  <br/>
+  <pre><code class="language-bash" data-trim>
+# Generate compile_commands.json (uses hedron_compile_commands, a non-BCR dep)
+bazel run //:refresh_compile_commands
+# or:
+./scripts/refresh_compile_commands.sh
+  </code></pre>
+  <br/>
+  <p style="font-size:.8em;">The file is written to the workspace root, where clangd finds it automatically. Re-run after adding or modifying C++ sources.</p>
+  <p class="dim">Go tooling (gopls) works out of the box via go.mod — no extra step needed.</p>
+</section>
+
+<!-- ─────────────────────────────── TAKEAWAYS ─────────────────────────── -->
+<section class="center">
+  <h2>Takeaways</h2>
+  <br/>
+  <div style="text-align:left; display:inline-block; font-size:.88em; line-height:2.2;">
+    <p>🔒 &nbsp;<strong>Hermetic + incremental</strong> — same inputs, same outputs, only rebuild what changed</p>
+    <p>📦 &nbsp;<strong>Bzlmod</strong> — declare all deps in <code>MODULE.bazel</code>; BCR or http_archive for the rest</p>
+    <p>🔀 &nbsp;<strong>Polyglot by design</strong> — C++, Go, and Proto in one graph, one command</p>
+    <p>🧪 &nbsp;<strong>Testing is first-class</strong> — unit tests, integration tests, cross-language <code>sh_test</code></p>
+    <p>🔍 &nbsp;<strong>Queryable</strong> — <code>bazel query/cquery/aquery</code> for understanding the graph</p>
+    <p>⚡ &nbsp;<strong>Cache everything</strong> — local disk cache + CI cache, shared transparently</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────── Q&A ───────────────────────────────── -->
+<section class="center">
+  <h2>Questions?</h2>
+  <br/>
+  <p class="dim">github.com/mike-boquard/bazel-intro</p>
+  <br/>
+  <div style="font-size:.75em; color:#666;">
+    <p>Slides built with <a href="https://revealjs.com" style="color:var(--accent);">Reveal.js</a></p>
+  </div>
+</section>
+
+</div><!-- .slides -->
+</div><!-- .reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    progress: true,
+    transition: 'fade',
+    transitionSpeed: 'fast',
+    controls: true,
+    controlsLayout: 'bottom-right',
+    plugins: [RevealHighlight, RevealNotes],
+    highlight: {
+      highlightOnLoad: true,
+    },
+  });
+</script>
+</body>
+</html>
