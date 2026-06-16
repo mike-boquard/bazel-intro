@@ -52,20 +52,21 @@ python3 -m http.server 8000 --directory .
 | 13 | Proto BUILD — proto_library, cc_grpc_library, go_proto_library |
 | 14 | Cross-language — C++ server + Go client |
 | 15 | Integration test — sh_test wiring server and client |
-| 16 | Testing — unit, integration, output modes |
-| 17 | Caching comparison — Ninja/CMake vs Bazel |
-| 18 | Caching config — disk cache + CI restore-keys |
-| 19 | Querying the build graph — query, cquery, aquery |
-| 20 | Dev ergonomics — clangd / compile_commands.json |
-| 21 | Hermetic Python — rules_python, pip.parse, requirements_lock.txt |
-| 22 | Takeaways |
-| 23 | FAQ divider |
-| 24 | FAQ: Pinning a Clang version (toolchains_llvm, --config=clang) |
-| 25 | FAQ: Custom flags & sanitizers |
-| 26 | FAQ: Cross-compilation |
-| 27 | FAQ: Migrating from CMake |
-| 28 | FAQ: System & vendored deps |
-| 29 | FAQ: Go specifics |
-| 30 | FAQ: Performance & remote execution |
-| 31 | FAQ: Rough edges |
-| 32 | Q&A |
+| 16 | Testing — bazel test commands, --test_filter, --runs_per_test, caching |
+| 17 | GoogleTest integration — cc_test + @googletest//:gtest_main, BCR dep, sandbox, vs CMake |
+| 18 | Caching comparison — Ninja/CMake vs Bazel |
+| 19 | Caching config — disk cache + CI restore-keys |
+| 20 | Querying the build graph — query, cquery, aquery |
+| 21 | Dev ergonomics — clangd / compile_commands.json |
+| 22 | Hermetic Python — rules_python, pip.parse, requirements_lock.txt |
+| 23 | Takeaways |
+| 24 | FAQ divider |
+| 25 | FAQ: Pinning a Clang version (toolchains_llvm, --config=clang) |
+| 26 | FAQ: Custom flags & sanitizers |
+| 27 | FAQ: Cross-compilation |
+| 28 | FAQ: Migrating from CMake |
+| 29 | FAQ: System & vendored deps |
+| 30 | FAQ: Go specifics |
+| 31 | FAQ: Performance & remote execution |
+| 32 | FAQ: Rough edges |
+| 33 | Q&A |

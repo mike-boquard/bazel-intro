@@ -408,28 +408,82 @@ sh_test(
 <section>
   <h2>Testing</h2>
   <pre><code class="language-bash" data-trim>
-# Run everything
-bazel test //...
+bazel test //...                                   # run every test in the workspace
+bazel test //cpp/...                               # scope to one subtree
+bazel test //cpp/greeter:greeter_test              # one specific target
 
-# Individual targets
-bazel test //cpp/greeter:greeter_test
-bazel test //go/greeter:greeter_test
-bazel test //test/integration:greeter_integration_test
+# Filter to specific test cases (--test_filter passes --gtest_filter / -run)
+bazel test //cpp/greeter:greeter_test --test_filter="GreeterTest.HelloWithName"
+
+# Flakiness detection — run each test 10 times
+bazel test //... --runs_per_test=10
+
+# Force a re-run even if the result is cached
+bazel test //... --nocache_test_results
   </code></pre>
-  <div class="two-col" style="margin-top:.5em;">
+  <div class="two-col" style="margin-top:.4em;">
     <div class="card">
       <h4>Results are cached</h4>
-      <p>Unchanged targets don't re-run. Use <code>--cache_test_results=no</code> to force.</p>
+      <p>Unchanged targets don't re-run. Content hash, not timestamp — a <code>git checkout</code> and back is a cache hit.</p>
     </div>
     <div class="card">
       <h4>Output control</h4>
-      <p><code>--test_output=errors</code> — only show failing output (set in <code>.bazelrc</code>)<br/>
-         <code>--test_output=all</code> — always show stdout/stderr</p>
+      <p><code>--test_output=errors</code> — failing output only (default in <code>.bazelrc</code>)<br/>
+         <code>--test_output=all</code> — always print stdout/stderr<br/>
+         <code>--test_verbose_timeout_warnings</code> — flag tests near their limit</p>
     </div>
   </div>
 </section>
 
-<!-- 17 ── CACHING COMPARISON ────────────────────────────────────────────── -->
+<!-- 17 ── GOOGLETEST INTEGRATION ──────────────────────────────────────────── -->
+<section>
+  <h2>GoogleTest integration</h2>
+  <p class="small" style="margin-bottom:.5em;">GoogleTest is a BCR dependency — Bazel downloads and builds it from source. No system install, no <code>find_package</code>.</p>
+  <div class="two-col" style="gap:.8em;">
+    <div>
+      <p class="small" style="margin:0 0 .3em;"><strong>MODULE.bazel</strong></p>
+      <pre><code class="language-python" data-trim>
+bazel_dep(name = "googletest", version = "1.15.2")
+      </code></pre>
+      <p class="small" style="margin:.5em 0 .3em;"><strong>BUILD.bazel</strong></p>
+      <pre><code class="language-python" data-trim>
+cc_test(
+    name = "greeter_test",
+    srcs = ["greeter_test.cc"],
+    deps = [
+        ":greeter",
+        # gtest_main supplies main() — no boilerplate needed
+        "@googletest//:gtest_main",
+    ],
+)
+      </code></pre>
+      <p class="small" style="margin:.5em 0 .3em;"><strong>greeter_test.cc</strong></p>
+      <pre><code class="language-cpp" data-trim>
+#include "gtest/gtest.h"
+TEST(GreeterTest, HelloWithName) {
+    EXPECT_EQ(greeter::Hello("World"), "Hello, World!");
+}
+      </code></pre>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:.6em;">
+        <h4>What Bazel does</h4>
+        <p>Each <code>cc_test</code> is compiled into a standalone binary and run in an isolated sandbox. No shared state between tests.</p>
+      </div>
+      <div class="card" style="margin-bottom:.6em;">
+        <h4>vs CMake / CTest</h4>
+        <p>CMake needs <code>find_package(GTest REQUIRED)</code> — requires GTest on the system. Bazel always builds the exact pinned version from source.</p>
+      </div>
+      <div class="card">
+        <h4>--test_filter</h4>
+        <p>Passes <code>--gtest_filter</code> to the test binary. Run a single test case without rebuilding:</p>
+        <p><code>--test_filter="Suite.Case"</code></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 18 ── CACHING COMPARISON ────────────────────────────────────────────── -->
 <section>
   <h2>Caching: Ninja/CMake vs Bazel</h2>
   <table class="cmp-table">
@@ -472,7 +526,7 @@ bazel test //test/integration:greeter_integration_test
   <p class="dim" style="margin-top:.5em;">The mtime problem is why "clean builds" are a thing in CMake projects. Bazel doesn't need them.</p>
 </section>
 
-<!-- 18 ── CACHING CONFIG ──────────────────────────────────────────────────── -->
+<!-- 19 ── CACHING CONFIG ──────────────────────────────────────────────────── -->
 <section>
   <h2>Caching: in practice</h2>
   <div class="two-col">
@@ -500,7 +554,7 @@ build --disk_cache=~/.cache/bazel/disk-cache
   </p>
 </section>
 
-<!-- 19 ── QUERY ──────────────────────────────────────────────────────────── -->
+<!-- 20 ── QUERY ──────────────────────────────────────────────────────────── -->
 <section>
   <h2>Querying the build graph</h2>
   <div class="three-col" style="margin-bottom:.8em; font-size:.82em;">
@@ -530,7 +584,7 @@ bazel aquery 'mnemonic("CppCompile", //cpp/greeter:greeter)' \
   </code></pre>
 </section>
 
-<!-- 20 ── ERGONOMICS ─────────────────────────────────────────────────────── -->
+<!-- 21 ── ERGONOMICS ─────────────────────────────────────────────────────── -->
 <section>
   <h2>Dev ergonomics: clangd</h2>
   <p class="small" style="margin-bottom:.7em;">Bazel uses workspace-rooted includes (<code>"cpp/greeter/greeter.h"</code>). clangd can't resolve these without a compilation database.</p>
@@ -552,7 +606,7 @@ bazel run //:refresh_compile_commands
   </div>
 </section>
 
-<!-- 21 ── PYTHON HERMETICITY ─────────────────────────────────────────────── -->
+<!-- 22 ── PYTHON HERMETICITY ─────────────────────────────────────────────── -->
 <section>
   <h2>Hermetic Python with <code>rules_python</code></h2>
   <p class="small" style="margin-bottom:.5em;">The same hermetic story applies to Python: pinned interpreter + pinned packages with content hashes.</p>
@@ -597,7 +651,7 @@ py_binary(name = "demo", srcs = ["main.py"],
   </div>
 </section>
 
-<!-- 22 ── TAKEAWAYS ─────────────────────────────────────────────────────── -->
+<!-- 23 ── TAKEAWAYS ─────────────────────────────────────────────────────── -->
 <section>
   <h2>Takeaways</h2>
   <div style="font-size:.82em; line-height:2.1; margin-top:.4em;">
@@ -614,13 +668,13 @@ py_binary(name = "demo", srcs = ["main.py"],
      FAQ SECTION
      ══════════════════════════════════════════════════════════════════════════ -->
 
-<!-- 23 ── FAQ DIVIDER ────────────────────────────────────────────────────── -->
+<!-- 24 ── FAQ DIVIDER ────────────────────────────────────────────────────── -->
 <section class="center">
   <h2 style="font-size:1.6em; color:#fff;">FAQ</h2>
   <p style="color:var(--accent); font-size:.9em; margin-top:.4em;">Common questions from C++ and Go teams</p>
 </section>
 
-<!-- 23 ── FAQ: PINNING A COMPILER ───────────────────────────────────────── -->
+<!-- 25 ── FAQ: PINNING A COMPILER ───────────────────────────────────────── -->
 <section>
   <h2>FAQ: Can I pin a specific Clang version?</h2>
   <p class="small">Yes — <code>toolchains_llvm</code> from the BCR downloads an exact pre-built LLVM release. This repo uses LLVM 18.1.8 for Linux CI; macOS uses Xcode Clang (pre-built arm64 binaries top out at LLVM 17 on Apple Silicon).</p>
@@ -643,7 +697,7 @@ bazel build //cpp/...                  # macOS: uses Xcode Clang
   </code></pre>
 </section>
 
-<!-- 24 ── FAQ: COMPILER FLAGS & SANITIZERS ──────────────────────────────── -->
+<!-- 26 ── FAQ: COMPILER FLAGS & SANITIZERS ──────────────────────────────── -->
 <section>
   <h2>FAQ: Custom flags &amp; sanitizers</h2>
   <p class="small" style="margin-bottom:.4em;"><strong>Three scopes for compiler flags:</strong></p>
@@ -672,7 +726,7 @@ bazel test --config=asan //...
   </code></pre>
 </section>
 
-<!-- 26 ── FAQ: CROSS-COMPILATION ────────────────────────────────────────── -->
+<!-- 27 ── FAQ: CROSS-COMPILATION ────────────────────────────────────────── -->
 <section>
   <h2>FAQ: Cross-compilation</h2>
   <p class="small">Bazel has first-class platform support. Define a platform target and select it at build time:</p>
@@ -692,7 +746,7 @@ bazel build --platforms=//platforms:linux_arm64 //cpp/app:app
   <p class="dim" style="margin-top:.4em;"><code>toolchains_llvm</code> supports cross-compilation out of the box — configure it with <code>exec_arch</code> and <code>target_arch</code>. This is generally cleaner than CMake toolchain files because the platform is a first-class build graph node, not an external file sourced before analysis.</p>
 </section>
 
-<!-- 27 ── FAQ: MIGRATING FROM CMAKE ─────────────────────────────────────── -->
+<!-- 28 ── FAQ: MIGRATING FROM CMAKE ─────────────────────────────────────── -->
 <section>
   <h2>FAQ: Migrating from CMake</h2>
   <div class="two-col" style="margin-bottom:.5em;">
@@ -718,7 +772,7 @@ cmake(
   <p class="dim" style="margin-top:.3em;">Go migration is easier — Gazelle generates BUILD files from <code>go.mod</code> automatically. C++ requires more manual work per package.</p>
 </section>
 
-<!-- 25 ── FAQ: SYSTEM & VENDORED DEPS ───────────────────────────────────── -->
+<!-- 29 ── FAQ: SYSTEM & VENDORED DEPS ───────────────────────────────────── -->
 <section>
   <h2>FAQ: System libraries &amp; vendored deps</h2>
   <p class="small" style="margin-bottom:.4em;"><strong>System libraries</strong> (OpenSSL, zlib, libcurl…) — three options, in order of preference:</p>
@@ -746,7 +800,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   </code></pre>
 </section>
 
-<!-- 26 ── FAQ: GO SPECIFICS ─────────────────────────────────────────────── -->
+<!-- 30 ── FAQ: GO SPECIFICS ─────────────────────────────────────────────── -->
 <section>
   <h2>FAQ: Go specifics</h2>
   <div class="three-col" style="margin-bottom:.5em;">
@@ -766,7 +820,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   <p class="dim">Gazelle handles the common case well — it reads <code>import</code> statements and generates BUILD files automatically. Edge cases (build tags, internal packages) require manual tuning.</p>
 </section>
 
-<!-- 27 ── FAQ: PERFORMANCE & REMOTE EXECUTION ───────────────────────────── -->
+<!-- 31 ── FAQ: PERFORMANCE & REMOTE EXECUTION ───────────────────────────── -->
 <section>
   <h2>FAQ: Performance &amp; scale</h2>
   <div class="two-col" style="margin-bottom:.5em;">
@@ -782,7 +836,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   <p class="small"><strong>Parallelism:</strong> <code>--jobs=N</code> controls concurrency (default = CPU count). Bazel schedules more aggressively than Ninja because it holds the full dependency graph and knows exactly which actions are independent.</p>
 </section>
 
-<!-- 28 ── FAQ: ROUGH EDGES ───────────────────────────────────────────────── -->
+<!-- 32 ── FAQ: ROUGH EDGES ───────────────────────────────────────────────── -->
 <section>
   <h2>FAQ: Honest rough edges</h2>
   <div class="three-col">
@@ -802,7 +856,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   <p class="dim" style="margin-top:.5em;">These are real. Worth setting expectations with the team upfront rather than discovering them in week two.</p>
 </section>
 
-<!-- 29 ── Q&A ────────────────────────────────────────────────────────────── -->
+<!-- 33 ── Q&A ────────────────────────────────────────────────────────────── -->
 <section class="center">
   <h2>Questions?</h2>
   <p class="dim" style="margin-top:.8em;">github.com/mike-boquard/bazel-intro</p>
