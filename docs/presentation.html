@@ -91,6 +91,7 @@
     <li>C++ and Go — same patterns, different rules</li>
     <li>Cross-language with Proto / gRPC</li>
     <li>Testing, caching (vs Ninja/CMake), and querying the build graph</li>
+    <li>FAQ — compiler pinning, migration, Go, performance, rough edges</li>
   </ol>
 </section>
 
@@ -535,7 +536,193 @@ bazel run //:refresh_compile_commands
   </div>
 </section>
 
-<!-- 20 ── Q&A ────────────────────────────────────────────────────────────── -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     FAQ SECTION
+     ══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- 20 ── FAQ DIVIDER ────────────────────────────────────────────────────── -->
+<section class="center">
+  <h2 style="font-size:1.6em; color:#fff;">FAQ</h2>
+  <p style="color:var(--accent); font-size:.9em; margin-top:.4em;">Common questions from C++ and Go teams</p>
+</section>
+
+<!-- 21 ── FAQ: PINNING A COMPILER ───────────────────────────────────────── -->
+<section>
+  <h2>FAQ: Can I pin a specific Clang version?</h2>
+  <p class="small">Yes — use <code>toolchains_llvm</code> from the BCR. It downloads and pins an exact LLVM release; no system Clang required.</p>
+  <pre><code class="language-python" data-trim>
+# MODULE.bazel
+bazel_dep(name = "toolchains_llvm", version = "1.0.0")
+
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm.toolchain(llvm_version = "17.0.6")
+use_repo(llvm, "llvm_toolchain")
+
+register_toolchains("@llvm_toolchain//:cc-toolchain-x86_64-linux")
+  </code></pre>
+  <p class="dim" style="margin-top:.4em;">Without a registered toolchain, Bazel falls back to the system <code>gcc</code>/<code>g++</code> — the one case where Bazel isn't hermetic by default. Registering a toolchain fixes this.</p>
+</section>
+
+<!-- 22 ── FAQ: COMPILER FLAGS & SANITIZERS ──────────────────────────────── -->
+<section>
+  <h2>FAQ: Custom flags &amp; sanitizers</h2>
+  <p class="small" style="margin-bottom:.4em;"><strong>Three scopes for compiler flags:</strong></p>
+  <div class="three-col" style="margin-bottom:.5em;">
+    <div class="card">
+      <h4>Per-target</h4>
+      <p><code>copts = ["-O3"]</code> in <code>cc_library</code> / <code>cc_binary</code></p>
+    </div>
+    <div class="card">
+      <h4>Per-invocation</h4>
+      <p><code>bazel build --copt=-march=native</code></p>
+    </div>
+    <div class="card">
+      <h4>Persistent (.bazelrc)</h4>
+      <p><code>build --cxxopt=-std=c++17</code> — applied to every build</p>
+    </div>
+  </div>
+  <p class="small"><strong>Sanitizers</strong> — add a named config to <code>.bazelrc</code>:</p>
+  <pre><code class="language-ini" data-trim>
+build:asan  --copt=-fsanitize=address   --linkopt=-fsanitize=address
+build:tsan  --copt=-fsanitize=thread    --linkopt=-fsanitize=thread
+build:ubsan --copt=-fsanitize=undefined --linkopt=-fsanitize=undefined
+  </code></pre>
+  <pre><code class="language-bash" data-trim>
+bazel test --config=asan //...
+  </code></pre>
+</section>
+
+<!-- 23 ── FAQ: CROSS-COMPILATION ────────────────────────────────────────── -->
+<section>
+  <h2>FAQ: Cross-compilation</h2>
+  <p class="small">Bazel has first-class platform support. Define a platform target and select it at build time:</p>
+  <pre><code class="language-python" data-trim>
+# platforms/BUILD.bazel
+platform(
+    name = "linux_arm64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:arm64",
+    ],
+)
+  </code></pre>
+  <pre><code class="language-bash" data-trim>
+bazel build --platforms=//platforms:linux_arm64 //cpp/app:app
+  </code></pre>
+  <p class="dim" style="margin-top:.4em;"><code>toolchains_llvm</code> supports cross-compilation out of the box — configure it with <code>exec_arch</code> and <code>target_arch</code>. This is generally cleaner than CMake toolchain files because the platform is a first-class build graph node, not an external file sourced before analysis.</p>
+</section>
+
+<!-- 24 ── FAQ: MIGRATING FROM CMAKE ─────────────────────────────────────── -->
+<section>
+  <h2>FAQ: Migrating from CMake</h2>
+  <div class="two-col" style="margin-bottom:.5em;">
+    <div class="card">
+      <h4>Incremental migration</h4>
+      <p><code>CMakeLists.txt</code> and <code>BUILD.bazel</code> can coexist in the same repo indefinitely. Migrate package by package; run both build systems until confidence is high.</p>
+    </div>
+    <div class="card">
+      <h4>CMake-only dependencies</h4>
+      <p><code>rules_foreign_cc</code> wraps a CMake build as a hermetic Bazel action. Bazel invokes CMake internally and treats the outputs as normal build artifacts.</p>
+    </div>
+  </div>
+  <pre><code class="language-python" data-trim>
+# Wrap a CMake dep inside Bazel
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+
+cmake(
+    name  = "libfoo",
+    lib_source = "@libfoo_src//:all_srcs",
+    out_static_libs = ["libfoo.a"],
+)
+  </code></pre>
+  <p class="dim" style="margin-top:.3em;">Go migration is easier — Gazelle generates BUILD files from <code>go.mod</code> automatically. C++ requires more manual work per package.</p>
+</section>
+
+<!-- 25 ── FAQ: SYSTEM & VENDORED DEPS ───────────────────────────────────── -->
+<section>
+  <h2>FAQ: System libraries &amp; vendored deps</h2>
+  <p class="small" style="margin-bottom:.4em;"><strong>System libraries</strong> (OpenSSL, zlib, libcurl…) — three options, in order of preference:</p>
+  <div class="three-col" style="margin-bottom:.5em;">
+    <div class="card">
+      <h4>1. BCR</h4>
+      <p>Check first — <code>boringssl</code>, <code>zlib</code>, and others are already there.</p>
+    </div>
+    <div class="card">
+      <h4>2. http_archive</h4>
+      <p>Download from source, provide a <code>BUILD</code> file. Fully hermetic.</p>
+    </div>
+    <div class="card">
+      <h4>3. rules_foreign_cc</h4>
+      <p>Build their existing CMake/autoconf build inside Bazel.</p>
+    </div>
+  </div>
+  <p class="small"><strong>Vendored dependencies</strong> — Bazel works well with vendored code:</p>
+  <pre><code class="language-python" data-trim>
+# Point at a local directory (no download)
+local_repository(name = "mylib", path = "vendor/mylib")
+
+# Or archive a vendor dir
+http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
+  </code></pre>
+</section>
+
+<!-- 26 ── FAQ: GO SPECIFICS ─────────────────────────────────────────────── -->
+<section>
+  <h2>FAQ: Go specifics</h2>
+  <div class="three-col" style="margin-bottom:.5em;">
+    <div class="card">
+      <h4><code>go build</code> / <code>go test</code></h4>
+      <p>Still work — <code>go.mod</code> is a normal Go module. You lose the Bazel cache when using them, but nothing breaks. Teams often run both during adoption.</p>
+    </div>
+    <div class="card">
+      <h4>cgo</h4>
+      <p>Supported — requires a C toolchain to be configured. Use <code>pure = "on"</code> on a <code>go_binary</code> to opt out explicitly. Works, but adds complexity.</p>
+    </div>
+    <div class="card bad">
+      <h4>go:generate</h4>
+      <p>No native equivalent. Bazel wants all codegen as explicit rules. Wrap output in a <code>genrule</code>, or commit generated files and document the generation step separately.</p>
+    </div>
+  </div>
+  <p class="dim">Gazelle handles the common case well — it reads <code>import</code> statements and generates BUILD files automatically. Edge cases (build tags, internal packages) require manual tuning.</p>
+</section>
+
+<!-- 27 ── FAQ: PERFORMANCE & REMOTE EXECUTION ───────────────────────────── -->
+<section>
+  <h2>FAQ: Performance &amp; scale</h2>
+  <div class="two-col" style="margin-bottom:.5em;">
+    <div class="card">
+      <h4>Cold build vs CMake+Ninja</h4>
+      <p>First build: comparable or slightly slower (Bazel also fetches deps). Subsequent builds: faster, because content-hash caching is exact. At scale — large teams, many targets — the gap becomes dramatic.</p>
+    </div>
+    <div class="card">
+      <h4>Remote execution (RBE)</h4>
+      <p>Bazel can distribute actions across a build cluster (<code>--remote_executor=grpc://...</code>). Remote <em>cache</em> (<code>--remote_cache=</code>) is a simpler first step — CI writes, every developer reads. Open-source options: BuildBuddy, NativeLink, EngFlow.</p>
+    </div>
+  </div>
+  <p class="small"><strong>Parallelism:</strong> <code>--jobs=N</code> controls concurrency (default = CPU count). Bazel schedules more aggressively than Ninja because it holds the full dependency graph and knows exactly which actions are independent.</p>
+</section>
+
+<!-- 28 ── FAQ: ROUGH EDGES ───────────────────────────────────────────────── -->
+<section>
+  <h2>FAQ: Honest rough edges</h2>
+  <div class="three-col">
+    <div class="card bad">
+      <h4>Learning curve</h4>
+      <p>The hermetic mindset is a genuine shift. "Why can't I read <code>/usr/local/include</code>?" is a common early frustration. Most teams take a few weeks to feel fluent.</p>
+    </div>
+    <div class="card bad">
+      <h4>Error messages</h4>
+      <p>Toolchain resolution failures in particular can be cryptic. <code>--toolchain_resolution_debug=.*</code> helps but produces walls of output.</p>
+    </div>
+    <div class="card bad">
+      <h4>Bazel version upgrades</h4>
+      <p>Bumping <code>.bazelversion</code> can break builds. The BCR compatibility matrix and Bzlmod mitigate this, but it's not frictionless. Pin and upgrade deliberately.</p>
+    </div>
+  </div>
+  <p class="dim" style="margin-top:.5em;">These are real. Worth setting expectations with the team upfront rather than discovering them in week two.</p>
+</section>
+
+<!-- 29 ── Q&A ────────────────────────────────────────────────────────────── -->
 <section class="center">
   <h2>Questions?</h2>
   <p class="dim" style="margin-top:.8em;">github.com/mike-boquard/bazel-intro</p>
