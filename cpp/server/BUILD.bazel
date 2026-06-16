@@ -10,6 +10,7 @@ load("@rules_cc//cc:defs.bzl", "cc_binary")
 cc_binary(
     name = "server",
     srcs = ["main.cc"],
+    visibility = ["//visibility:public"],
     deps = [
         "//proto:greeter_cc_grpc",
         "//proto:greeter_cc_proto",

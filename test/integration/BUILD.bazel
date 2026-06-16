@@ -1,0 +1,19 @@
+# BUILD.bazel — Cross-language integration test: C++ server + Go client.
+#
+# sh_test wires the C++ server and Go client together. Both binaries are listed
+# in data so Bazel builds them before running the test. $(rootpath ...) resolves
+# to the runfile path at test execution time.
+# Docs: https://bazel.build/reference/be/shell#sh_test
+
+sh_test(
+    name = "greeter_integration_test",
+    srcs = ["greeter_test.sh"],
+    args = [
+        "$(rootpath //cpp/server:server)",
+        "$(rootpath //go/client:client)",
+    ],
+    data = [
+        "//cpp/server:server",
+        "//go/client:client",
+    ],
+)
