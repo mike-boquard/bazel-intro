@@ -99,7 +99,7 @@
 <section>
   <h2>Why Bazel?</h2>
   <p class="small" style="margin-bottom:.8em;">You already have <em>make</em>, <em>cmake</em>, <em>go build</em>, <em>cargo</em>…</p>
-  <div class="three-col">
+  <div class="two-col" style="gap:.7em;">
     <div class="card">
       <h4>Hermetic *</h4>
       <p>Builds don't read from <code>/usr/include</code> or depend on ambient env. Same inputs → same outputs, always.</p>
@@ -111,6 +111,10 @@
     <div class="card">
       <h4>Polyglot</h4>
       <p>C++, Go, Java, Proto — one build graph, one command. Cross-language dependencies just work.</p>
+    </div>
+    <div class="card">
+      <h4>Correct by construction</h4>
+      <p>The dependency graph must be a DAG. Circular dependencies are a hard error at analysis time — not a cryptic linker failure at build time.</p>
     </div>
   </div>
   <p class="dim" style="margin-top:.5em;">The caching story alone pays off on large codebases. CI and dev machines share the same artifact store.</p>
