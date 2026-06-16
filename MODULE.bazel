@@ -28,6 +28,18 @@ bazel_dep(name = "rules_cc", version = "0.0.10")
 bazel_dep(name = "googletest", version = "1.15.2")
 bazel_dep(name = "abseil-cpp", version = "20240722.0")
 
+# ── Proto and gRPC (BCR) ──────────────────────────────────────────────────────
+# protobuf — proto_library rule, protoc compiler, and cc_proto_library support.
+#             Provides the language-neutral proto_library and cc_proto_library
+#             rules used in proto/BUILD.bazel.
+#             BCR: https://registry.bazel.build/modules/protobuf
+# grpc      — C++ gRPC runtime and the cc_grpc_library codegen macro.
+#             The Go gRPC runtime comes from go.mod (google.golang.org/grpc),
+#             not from this module.
+#             BCR: https://registry.bazel.build/modules/grpc
+bazel_dep(name = "protobuf", version = "29.3")
+bazel_dep(name = "grpc", version = "1.69.0")
+
 # ── Non-BCR C++ dependencies (via module extension) ───────────────────────────
 # Libraries absent from the BCR are fetched with http_archive() inside a module
 # extension defined in //third_party:extensions.bzl.  Each repo name must be
