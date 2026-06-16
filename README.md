@@ -2,8 +2,9 @@
 
 [![CI](https://github.com/mike-boquard/bazel-intro/actions/workflows/ci.yml/badge.svg)](https://github.com/mike-boquard/bazel-intro/actions/workflows/ci.yml)
 
-A Bazel workspace demonstrating C++ and Go builds with libraries, executables,
-BCR dependencies, non-BCR dependencies, and unit tests.
+A Bazel workspace demonstrating C++, Go, and Python builds with libraries,
+executables, BCR dependencies, non-BCR dependencies, hermetic pip packages,
+and a pinned LLVM compiler toolchain.
 
 ## Prerequisites
 
@@ -19,7 +20,8 @@ sudo curl -fsSL -o /usr/local/bin/bazel \
 sudo chmod +x /usr/local/bin/bazel
 ```
 
-No separate Go installation is needed — Bazel downloads and caches the Go SDK.
+No separate Go or Python installation is needed — Bazel downloads and caches
+both SDKs automatically.
 
 ## Project layout
 
