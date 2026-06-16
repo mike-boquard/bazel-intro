@@ -10,7 +10,7 @@ load("@rules_cc//cc:defs.bzl", "cc_binary")
 cc_binary(
     name = "server",
     srcs = ["main.cc"],
-    visibility = ["//visibility:public"],
+    visibility = ["//visibility:public"],  # required by //test/integration:greeter_integration_test
     deps = [
         "//proto:greeter_cc_grpc",
         "//proto:greeter_cc_proto",

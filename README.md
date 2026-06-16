@@ -26,12 +26,18 @@ No separate Go installation is needed — Bazel downloads and caches the Go SDK.
 ```
 MODULE.bazel            # Bzlmod dependency declarations
 go.mod                  # Go module + third-party Go packages
+proto/
+  greeter.proto         # Shared gRPC service definition
 cpp/
   greeter/              # C++ library (uses abseil from BCR)
   app/                  # C++ binary (uses spdlog, a non-BCR dep)
+  server/               # C++ gRPC server implementing GreeterService
 go/
   greeter/              # Go library
   app/                  # Go binary (uses github.com/fatih/color)
+  client/               # Go gRPC client calling GreeterService
+test/
+  integration/          # sh_test: starts C++ server, calls Go client
 third_party/
   extensions.bzl        # Module extension for non-BCR C++ deps
   spdlog.BUILD          # Build rules for spdlog (header-only)
@@ -73,6 +79,7 @@ bazel test //...
 # Individual test targets
 bazel test //cpp/greeter:greeter_test
 bazel test //go/greeter:greeter_test
+bazel test //test/integration:greeter_integration_test
 ```
 
 ## Proto / gRPC
