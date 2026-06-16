@@ -29,9 +29,21 @@ bazel query '//...'
 //cpp/app:app
 //cpp/greeter:greeter
 //cpp/greeter:greeter_test
+//cpp/server:server
 //go/app:app
+//go/client:client
 //go/greeter:greeter
 //go/greeter:greeter_test
+//proto:_greeter_cc_grpc_grpc_codegen
+//proto:greeter_cc_grpc
+//proto:greeter_cc_proto
+//proto:greeter_go_proto
+//proto:greeter_proto
+//python/demo:demo
+//rust/app:app
+//rust/greeter:greeter
+//rust/greeter:greeter_test
+//test/integration:greeter_integration_test
 ```
 
 ### List targets in a single package subtree
@@ -44,6 +56,7 @@ bazel query '//cpp/...'
 //cpp/app:app
 //cpp/greeter:greeter
 //cpp/greeter:greeter_test
+//cpp/server:server
 ```
 
 ### Find everything that depends on a target (reverse deps)
@@ -105,7 +118,15 @@ bazel query 'kind(cc_test, //...)'
 //cpp/greeter:greeter_test
 ```
 
-Other useful rule kinds: `go_test`, `cc_binary`, `go_binary`, `cc_library`.
+Other useful rule kinds:
+
+```bash
+bazel query 'kind(go_test, //...)'    # //go/greeter:greeter_test
+bazel query 'kind(rust_test, //...)'  # //rust/greeter:greeter_test
+bazel query 'kind(cc_binary, //...)'
+bazel query 'kind(go_binary, //...)'
+bazel query 'kind(rust_binary, //...)'
+```
 
 ### Filter targets by name pattern
 
@@ -118,9 +139,18 @@ bazel query 'filter("greeter", //...)'
 //cpp/greeter:greeter_test
 //go/greeter:greeter
 //go/greeter:greeter_test
+//proto:_greeter_cc_grpc_grpc_codegen
+//proto:greeter_cc_grpc
+//proto:greeter_cc_proto
+//proto:greeter_go_proto
+//proto:greeter_proto
+//rust/greeter:greeter
+//rust/greeter:greeter_test
+//test/integration:greeter_integration_test
 ```
 
-`filter` matches against the full label string using a regex.
+`filter` matches against the full label string using a regex. The `proto` and
+`test/integration` targets appear because their labels also contain "greeter".
 
 ---
 
@@ -141,15 +171,22 @@ bazel cquery '//...'
 ```
 
 ```
-//cpp/app:app (0c99c1c)
-//cpp/greeter:greeter (0c99c1c)
-//cpp/greeter:greeter_test (796b1f2)
-//go/app:app (0c99c1c)
-//go/greeter:greeter (0c99c1c)
-//go/greeter:greeter_test (796b1f2)
 //:refresh_compile_commands (0c99c1c)
 //:refresh_compile_commands.check_python_version.py (0c99c1c)
 //:refresh_compile_commands.py (0c99c1c)
+//cpp/app:app (0c99c1c)
+//cpp/greeter:greeter (0c99c1c)
+//cpp/greeter:greeter_test (796b1f2)
+//cpp/server:server (0c99c1c)
+//go/app:app (0c99c1c)
+//go/client:client (0c99c1c)
+//go/greeter:greeter (0c99c1c)
+//go/greeter:greeter_test (796b1f2)
+//python/demo:demo (0c99c1c)
+//rust/app:app (0c99c1c)
+//rust/greeter:greeter (0c99c1c)
+//rust/greeter:greeter_test (796b1f2)
+//test/integration:greeter_integration_test (796b1f2)
 ```
 
 Two distinct hashes appear: one for the default build configuration (binaries and

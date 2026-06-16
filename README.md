@@ -74,6 +74,8 @@ bazel build //cpp/greeter
 bazel build //cpp/app:app
 bazel build //go/greeter
 bazel build //go/app:app
+bazel build //rust/greeter
+bazel build //rust/app:app
 ```
 
 ## Run
@@ -86,6 +88,13 @@ bazel run //cpp/app:app -- Alice
 # Go binary
 bazel run //go/app:app
 bazel run //go/app:app -- Alice
+
+# Rust binary
+bazel run //rust/app:app
+bazel run //rust/app:app -- Alice
+
+# Python demo
+bazel run //python/demo:demo
 ```
 
 ## Test

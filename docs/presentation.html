@@ -110,7 +110,7 @@
     </div>
     <div class="card">
       <h4>Polyglot</h4>
-      <p>C++, Go, Java, Proto — one build graph, one command. Cross-language dependencies just work.</p>
+      <p>C++, Go, Python, Rust, Proto — one build graph, one command. Cross-language dependencies just work.</p>
     </div>
     <div class="card">
       <h4>Correct by construction</h4>
@@ -180,7 +180,7 @@ bazel_dep(name = "grpc",        version = "1.69.0")
 non_registry = use_extension("//third_party:extensions.bzl", "non_registry")
 use_repo(non_registry, "spdlog", "hedron_compile_commands")
   </code></pre>
-  <p class="dim" style="margin-top:.4em;">This repo also declares <code>bazel_skylib</code>, <code>rules_cc</code>, <code>gazelle</code>, and Go SDK/module extensions — the above is a representative subset.</p>
+  <p class="dim" style="margin-top:.4em;">This repo also declares <code>rules_python</code>, <code>rules_rust</code>, <code>toolchains_llvm</code>, <code>gazelle</code>, and their associated toolchain extensions — the above is a representative subset.</p>
 </section>
 
 <!-- 7 ── BCR ─────────────────────────────────────────────────────────────── -->
@@ -731,7 +731,7 @@ rust_test(name = "greeter_test", crate = ":greeter")
 <!-- 25 ── FAQ DIVIDER ────────────────────────────────────────────────────── -->
 <section class="center">
   <h2 style="font-size:1.6em; color:#fff;">FAQ</h2>
-  <p style="color:var(--accent); font-size:.9em; margin-top:.4em;">Common questions from C++ and Go teams</p>
+  <p style="color:var(--accent); font-size:.9em; margin-top:.4em;">Common questions from teams adopting Bazel</p>
 </section>
 
 <!-- 26 ── FAQ: PINNING A COMPILER ───────────────────────────────────────── -->
