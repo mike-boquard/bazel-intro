@@ -1,0 +1,17 @@
+# BUILD.bazel — Go gRPC client binary.
+#
+# Connects to the C++ gRPC server and calls SayHello.
+# //proto:greeter_go_proto provides the generated Go stubs.
+# @org_golang_google_grpc is the Go gRPC runtime (from go.mod, not BCR).
+# Docs: https://github.com/bazelbuild/rules_go/blob/main/docs/go/core/rules.md
+load("@rules_go//go:def.bzl", "go_binary")
+
+go_binary(
+    name = "client",
+    srcs = ["main.go"],
+    deps = [
+        "//proto:greeter_go_proto",
+        "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//credentials/insecure",
+    ],
+)
