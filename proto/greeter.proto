@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package greeter;
+
+// go_package sets the Go import path for the generated Go code.
+// Must match the importpath in go_proto_library below.
+option go_package = "github.com/mike-boquard/bazel-intro/proto/greeter";
+
+// GreeterService exposes a single SayHello RPC.
+service GreeterService {
+  rpc SayHello (HelloRequest) returns (HelloReply);
+}
+
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloReply {
+  string message = 1;
+}
