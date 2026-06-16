@@ -12,58 +12,60 @@
   <style>
     :root { --accent: #4ec9b0; --accent2: #ce9178; --dim: #777; }
 
+    /* ── Global size reduction ── */
+    /* Reveal.js scales the whole deck to fit the viewport using this as the base.
+       Lowering it shrinks everything proportionally before that scaling kicks in. */
+    .reveal { font-size: 32px; }
+
     .reveal h1, .reveal h2, .reveal h3 { text-transform: none; }
-    .reveal h2 { color: var(--accent); margin-bottom: .5em; }
+    .reveal h2 { color: var(--accent); font-size: 1.25em; margin-bottom: .3em; }
+    .reveal p  { margin: .3em 0; }
     .reveal .slides section { text-align: left; }
     .reveal .slides section.center { text-align: center; }
 
-    /* Keep code blocks from overflowing the slide */
-    .reveal pre { width: 100%; margin: 0; box-shadow: 0 0 16px rgba(0,0,0,.5); }
-    .reveal pre code { font-size: 0.62em; line-height: 1.45; max-height: 380px; overflow-y: auto; }
+    .reveal pre { width: 100%; margin: .3em 0 0; box-shadow: 0 0 12px rgba(0,0,0,.5); }
+    .reveal pre code { font-size: 0.5em; line-height: 1.4; max-height: 320px; overflow-y: auto; }
 
-    /* Constrain slide content height so nothing bleeds off-screen */
-    .reveal .slides section .slide-body { font-size: .82em; }
-
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; }
-    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .8em; }
+    .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: .7em; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .6em; }
 
     .card {
       background: rgba(255,255,255,.06);
       border-left: 3px solid var(--accent);
       border-radius: 4px;
-      padding: .5em .8em;
-      font-size: .78em;
+      padding: .35em .65em;
+      font-size: .72em;
     }
-    .card h4 { margin: 0 0 .25em; color: var(--accent); }
-    .card p, .card ul { margin: 0; line-height: 1.5; }
-    .card ul { padding-left: 1.1em; }
+    .card h4 { margin: 0 0 .2em; color: var(--accent); }
+    .card p, .card ul { margin: 0; line-height: 1.45; }
+    .card ul { padding-left: 1em; }
+
+    /* bad = red-tinted card */
+    .card.bad { border-left-color: #e06c75; }
+    .card.bad h4 { color: #e06c75; }
 
     .chain {
       font-family: monospace;
-      font-size: .78em;
-      line-height: 1.9;
+      font-size: .7em;
+      line-height: 1.75;
       background: rgba(255,255,255,.05);
       border-radius: 4px;
-      padding: .6em 1em;
+      padding: .45em .85em;
     }
 
-    .tag {
-      display: inline-block;
-      background: var(--accent);
-      color: #111;
-      border-radius: 3px;
-      padding: .05em .35em;
-      font-size: .65em;
-      font-weight: bold;
-      vertical-align: middle;
-    }
-    .tag.orange { background: var(--accent2); }
-
-    .dim { color: var(--dim); font-size: .8em; }
-    .small { font-size: .78em; }
+    .dim   { color: var(--dim); font-size: .72em; }
+    .small { font-size: .74em; }
 
     .reveal .progress { color: var(--accent); }
-    .reveal .slide-number { background: rgba(0,0,0,.4); font-size: .55em; }
+    .reveal .slide-number { background: rgba(0,0,0,.4); font-size: .5em; }
+
+    /* comparison table */
+    .cmp-table { width: 100%; border-collapse: collapse; font-size: .68em; margin-top: .5em; }
+    .cmp-table th { color: var(--accent); border-bottom: 1px solid #444; padding: .3em .5em; text-align: left; }
+    .cmp-table td { padding: .3em .5em; border-bottom: 1px solid #2a2a2a; vertical-align: top; }
+    .cmp-table td:first-child { color: #aaa; }
+    .good { color: #4ec9b0; }
+    .bad  { color: #e06c75; }
   </style>
 </head>
 <body>
@@ -88,7 +90,7 @@
     <li>Bzlmod — modern dependency management</li>
     <li>C++ and Go — same patterns, different rules</li>
     <li>Cross-language with Proto / gRPC</li>
-    <li>Testing, caching, and querying the build graph</li>
+    <li>Testing, caching (vs Ninja/CMake), and querying the build graph</li>
   </ol>
 </section>
 
@@ -110,8 +112,7 @@
       <p>C++, Go, Java, Proto — one build graph, one command. Cross-language dependencies just work.</p>
     </div>
   </div>
-  <br/>
-  <p class="dim">The caching story alone pays off on large codebases. CI and dev machines share the same artifact store.</p>
+  <p class="dim" style="margin-top:.5em;">The caching story alone pays off on large codebases. CI and dev machines share the same artifact store.</p>
 </section>
 
 <!-- 4 ── CONCEPTS ────────────────────────────────────────────────────────── -->
@@ -123,8 +124,7 @@
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ <strong>Target</strong> — a named buildable unit &nbsp;<code>//cpp/greeter:greeter_test</code><br/>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ <strong>Rule</strong> — the type &nbsp;<code>cc_library</code> / <code>go_binary</code> / <code>sh_test</code> …
   </div>
-  <br/>
-  <p class="small">Labels follow the pattern <code style="color:var(--accent);">//package:target</code>.
+  <p class="small" style="margin-top:.5em;">Labels follow the pattern <code style="color:var(--accent);">//package:target</code>.
   When the target name matches the directory, you can omit it:
   <code style="color:var(--accent);">//cpp/greeter</code> ≡ <code style="color:var(--accent);">//cpp/greeter:greeter</code></p>
 </section>
@@ -238,8 +238,7 @@ bazel run //cpp/app:app -- Alice   # pass args after --
 bazel test //cpp/greeter:greeter_test
 bazel test //cpp/...               # all C++ tests
   </code></pre>
-  <br/>
-  <p class="small">Bazel downloads the compiler toolchain, abseil, spdlog, and googletest automatically on first build — nothing needs to be installed manually.</p>
+  <p class="small" style="margin-top:.5em;">Bazel downloads the compiler toolchain, abseil, spdlog, and googletest automatically on first build — nothing needs to be installed manually.</p>
 </section>
 
 <!-- 10 ── GO ─────────────────────────────────────────────────────────────── -->
@@ -279,8 +278,7 @@ service GreeterService {
 message HelloRequest { string name    = 1; }
 message HelloReply   { string message = 1; }
   </code></pre>
-  <br/>
-  <div class="chain" style="font-size:.72em;">
+  <div class="chain" style="font-size:.72em; margin-top:.5em;">
     greeter.proto
     &nbsp;→&nbsp; <strong>greeter_cc_proto</strong> (C++ messages) &nbsp;→&nbsp; <strong>greeter_cc_grpc</strong> (C++ stubs) &nbsp;→&nbsp; cpp/server<br/>
     greeter.proto
@@ -348,8 +346,7 @@ go_binary(
       </code></pre>
     </div>
   </div>
-  <br/>
-  <pre><code class="language-bash" data-trim>
+  <pre style="margin-top:.5em;"><code class="language-bash" data-trim>
 bazel run //cpp/server:server                         # terminal 1: listens on :50051
 bazel run //go/client:client -- localhost:50051 Alice  # terminal 2 → Hello, Alice!
   </code></pre>
@@ -389,8 +386,7 @@ bazel test //cpp/greeter:greeter_test
 bazel test //go/greeter:greeter_test
 bazel test //test/integration:greeter_integration_test
   </code></pre>
-  <br/>
-  <div class="two-col">
+  <div class="two-col" style="margin-top:.5em;">
     <div class="card">
       <h4>Results are cached</h4>
       <p>Unchanged targets don't re-run. Use <code>--cache_test_results=no</code> to force.</p>
@@ -403,10 +399,53 @@ bazel test //test/integration:greeter_integration_test
   </div>
 </section>
 
-<!-- 16 ── CACHING ────────────────────────────────────────────────────────── -->
+<!-- 16 ── CACHING COMPARISON ────────────────────────────────────────────── -->
 <section>
-  <h2>Caching</h2>
-  <div class="two-col" style="margin-bottom:.8em;">
+  <h2>Caching: Ninja/CMake vs Bazel</h2>
+  <table class="cmp-table">
+    <tr>
+      <th></th>
+      <th>CMake + Ninja</th>
+      <th>Bazel</th>
+    </tr>
+    <tr>
+      <td>Cache key</td>
+      <td class="bad">File modification time (mtime)</td>
+      <td class="good">SHA-256 of all inputs</td>
+    </tr>
+    <tr>
+      <td>After <code>git checkout</code> and back</td>
+      <td class="bad">Full rebuild — mtimes changed</td>
+      <td class="good">Cache hit — content identical</td>
+    </tr>
+    <tr>
+      <td>Fresh CI clone</td>
+      <td class="bad">Always rebuilds everything</td>
+      <td class="good">Hits cache if inputs match</td>
+    </tr>
+    <tr>
+      <td>Cross-machine sharing</td>
+      <td class="bad">Impossible — mtimes aren't portable</td>
+      <td class="good">Native — remote cache or shared disk</td>
+    </tr>
+    <tr>
+      <td>Hermeticity</td>
+      <td class="bad">Reads <code>/usr/include</code>, ambient <code>PATH</code></td>
+      <td class="good">Sandboxed — no ambient environment</td>
+    </tr>
+    <tr>
+      <td>CI ↔ dev sharing</td>
+      <td class="bad">Not possible</td>
+      <td class="good">CI writes; devs read back</td>
+    </tr>
+  </table>
+  <p class="dim" style="margin-top:.5em;">The mtime problem is why "clean builds" are a thing in CMake projects. Bazel doesn't need them.</p>
+</section>
+
+<!-- 17 ── CACHING CONFIG ──────────────────────────────────────────────────── -->
+<section>
+  <h2>Caching: in practice</h2>
+  <div class="two-col">
     <div>
       <p class="small"><strong>Local disk cache (.bazelrc)</strong></p>
       <pre><code class="language-ini" data-trim>
@@ -422,10 +461,13 @@ build --disk_cache=~/.cache/bazel/disk-cache
     path: ~/.cache/bazel
     key: ${{ runner.os }}-bazel-${{ hashFiles('MODULE.bazel.lock') }}
       </code></pre>
-      <p class="dim">Same cache directory — CI and dev machines share the artifact store.</p>
+      <p class="dim">CI restores the same directory Bazel writes to locally — artifacts are shared.</p>
     </div>
   </div>
-  <p class="small">Cache key includes <code>MODULE.bazel.lock</code>, so adding a new dep automatically busts the cache.</p>
+  <p class="small" style="margin-top:.6em;">
+    Cache key uses <code>MODULE.bazel.lock</code> — adding a dep busts the cache automatically.<br/>
+    <span class="dim">For larger teams: Bazel also supports a <strong>remote cache</strong> (<code>--remote_cache=grpc://...</code>) so every developer hits the CI-populated cache without any local state.</span>
+  </p>
 </section>
 
 <!-- 17 ── QUERY ──────────────────────────────────────────────────────────── -->
@@ -468,8 +510,7 @@ bazel run //:refresh_compile_commands
 # or
 ./scripts/refresh_compile_commands.sh
   </code></pre>
-  <br/>
-  <div class="two-col">
+  <div class="two-col" style="margin-top:.5em;">
     <div class="card">
       <h4>C++</h4>
       <p>Re-run after adding or modifying source files. File is written to the workspace root where clangd finds it automatically.</p>
@@ -484,8 +525,7 @@ bazel run //:refresh_compile_commands
 <!-- 19 ── TAKEAWAYS ──────────────────────────────────────────────────────── -->
 <section>
   <h2>Takeaways</h2>
-  <br/>
-  <div style="font-size:.88em; line-height:2.3;">
+  <div style="font-size:.82em; line-height:2.1; margin-top:.4em;">
     <p>🔒 &nbsp;<strong>Hermetic + incremental</strong> — same inputs always produce the same outputs</p>
     <p>📦 &nbsp;<strong>Bzlmod</strong> — all deps in <code>MODULE.bazel</code>; BCR or <code>http_archive</code> for the rest</p>
     <p>🔀 &nbsp;<strong>Polyglot</strong> — C++, Go, and Proto in one graph, one <code>bazel build //...</code></p>
@@ -498,10 +538,8 @@ bazel run //:refresh_compile_commands
 <!-- 20 ── Q&A ────────────────────────────────────────────────────────────── -->
 <section class="center">
   <h2>Questions?</h2>
-  <br/>
-  <p class="dim">github.com/mike-boquard/bazel-intro</p>
-  <br/>
-  <p style="font-size:.65em; color:#555;">Slides: <code>docs/presentation.html</code> &nbsp;·&nbsp; Built with <a href="https://revealjs.com" style="color:var(--accent);">Reveal.js</a></p>
+  <p class="dim" style="margin-top:.8em;">github.com/mike-boquard/bazel-intro</p>
+  <p style="font-size:.6em; color:#555; margin-top:.5em;">Slides: <code>docs/presentation.html</code> &nbsp;·&nbsp; Built with <a href="https://revealjs.com" style="color:var(--accent);">Reveal.js</a></p>
 </section>
 
 </div><!-- .slides -->
