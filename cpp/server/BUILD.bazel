@@ -1,0 +1,18 @@
+# BUILD.bazel — C++ gRPC server binary.
+#
+# Depends on the generated C++ stubs from //proto and the gRPC C++ runtime
+# from the BCR grpc module.
+#
+# @grpc//:grpc++ is the main C++ gRPC runtime library (ServerBuilder, etc.).
+# Docs: https://grpc.io/docs/languages/cpp/bazel/
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+cc_binary(
+    name = "server",
+    srcs = ["main.cc"],
+    deps = [
+        "//proto:greeter_cc_grpc",
+        "//proto:greeter_cc_proto",
+        "@grpc//:grpc++",
+    ],
+)
