@@ -818,7 +818,7 @@ BasedOnStyle: LLVM
 IndentWidth: 4
 ColumnLimit: 100
   </code></pre>
-  <p class="dim" style="margin-top:.4em;">Note: <code>bazel run</code> executes in a sandbox with a different working directory, so the script passes absolute paths to clang-format. The <code>//:clang-format</code> alias in <code>BUILD.bazel</code> is a convenience pointer to <code>@llvm_toolchain//:clang-format</code>.</p>
+  <p class="dim" style="margin-top:.4em;">Note: the script passes absolute paths because <code>bazel run</code> may resolve the binary's working directory relative to its runfiles tree rather than the workspace root. The <code>//:clang-format</code> alias in <code>BUILD.bazel</code> is a convenience pointer to <code>@llvm_toolchain//:clang-format</code>.</p>
 </section>
 
 <!-- 29 ── FAQ: COMPILER FLAGS & SANITIZERS ────────────────────────────────  -->
@@ -914,13 +914,13 @@ cmake(
       <p>Build their existing CMake/autoconf build inside Bazel.</p>
     </div>
   </div>
-  <p class="small"><strong>Vendored dependencies</strong> — Bazel works well with vendored code:</p>
+  <p class="small"><strong>Vendored dependencies</strong> — wrap a local directory in a module extension (Bzlmod requires these calls inside an extension function, not bare in <code>MODULE.bazel</code>):</p>
   <pre><code class="language-python" data-trim>
-# Point at a local directory (no download)
+# third_party/extensions.bzl — inside a module extension function
 local_repository(name = "mylib", path = "vendor/mylib")
 
-# Or archive a vendor dir
-http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
+# Or use local_path_override to redirect a BCR module to a local fork
+local_path_override(module_name = "mylib", path = "vendor/mylib")
   </code></pre>
 </section>
 
