@@ -130,7 +130,34 @@
   <code style="color:var(--accent);">//cpp/greeter</code> ≡ <code style="color:var(--accent);">//cpp/greeter:greeter</code></p>
 </section>
 
-<!-- 5 ── MODULE.bazel ────────────────────────────────────────────────────── -->
+<!-- 5 ── WHAT IS BZLMOD ──────────────────────────────────────────────────── -->
+<section>
+  <h2>What is Bzlmod?</h2>
+  <p class="small" style="margin-bottom:.5em;">Bzlmod is Bazel's dependency management system, introduced in Bazel 5 and the default since Bazel 6. It replaces the older <code>WORKSPACE</code> file.</p>
+  <div class="two-col">
+    <div class="card bad">
+      <h4>WORKSPACE (old)</h4>
+      <ul>
+        <li>Imperative script — deps fetched in declaration order</li>
+        <li>No real version resolution — you manually manage transitive deps</li>
+        <li>Diamond dependency conflicts are your problem</li>
+        <li>No central registry — every project hand-rolls dep fetching</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Bzlmod / MODULE.bazel (new)</h4>
+      <ul>
+        <li>Declarative — each module states what it needs</li>
+        <li>Bazel resolves the full dep graph, detects conflicts</li>
+        <li>Backed by the Bazel Central Registry (BCR)</li>
+        <li>Lock file (<code>MODULE.bazel.lock</code>) pins exact versions</li>
+      </ul>
+    </div>
+  </div>
+  <p class="dim" style="margin-top:.5em;">Think of it as the difference between manually editing <code>node_modules</code> vs using <code>package.json</code> with <code>npm install</code>.</p>
+</section>
+
+<!-- 6 ── MODULE.bazel ────────────────────────────────────────────────────── -->
 <section>
   <h2>MODULE.bazel &amp; Bzlmod</h2>
   <p class="small" style="margin-bottom:.6em;">Bazel's modern dependency system — replaces the legacy <code>WORKSPACE</code> file.</p>
