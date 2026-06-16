@@ -88,7 +88,7 @@
     <li>Why Bazel — what problem it actually solves</li>
     <li>Core concepts: workspace, package, target, rule</li>
     <li>Bzlmod — modern dependency management</li>
-    <li>C++ and Go — same patterns, different rules</li>
+    <li>C++, Go, and Python — same patterns, different rules</li>
     <li>Cross-language with Proto / gRPC</li>
     <li>Testing, caching (vs Ninja/CMake), and querying the build graph</li>
     <li>FAQ — compiler pinning, migration, Go, performance, rough edges</li>
@@ -551,13 +551,58 @@ bazel run //:refresh_compile_commands
   </div>
 </section>
 
-<!-- 21 ── TAKEAWAYS ──────────────────────────────────────────────────────── -->
+<!-- 21 ── PYTHON HERMETICITY ─────────────────────────────────────────────── -->
+<section>
+  <h2>Hermetic Python with <code>rules_python</code></h2>
+  <p class="small" style="margin-bottom:.5em;">The same hermetic story applies to Python: pinned interpreter + pinned packages with content hashes.</p>
+  <div class="two-col" style="gap:.8em;">
+    <div>
+      <p class="small" style="margin:.0 0 .3em;"><strong>MODULE.bazel</strong></p>
+      <pre><code class="language-python" data-trim>
+bazel_dep(name = "rules_python", version = "1.0.0")
+
+python = use_extension(
+    "@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(python_version = "3.12")  # hermetic interpreter
+use_repo(python, "python_3_12", "pythons_hub")
+register_toolchains("@pythons_hub//:all")
+
+pip = use_extension(
+    "@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(hub_name = "pypi", python_version = "3.12",
+          requirements_lock = "//:requirements_lock.txt")
+use_repo(pip, "pypi")
+      </code></pre>
+    </div>
+    <div>
+      <p class="small" style="margin:0 0 .3em;"><strong>requirements_lock.txt (excerpt)</strong></p>
+      <pre><code class="language-text" data-trim>
+rich==14.0.0 \
+  --hash=sha256:1c9491e1... \
+  --hash=sha256:82f1bc23...
+pygments==2.20.0 \
+  --hash=sha256:6757cd03...
+      </code></pre>
+      <p class="small" style="margin:.5em 0 .3em;"><strong>BUILD.bazel</strong></p>
+      <pre><code class="language-python" data-trim>
+py_binary(name = "demo", srcs = ["main.py"],
+          main = "main.py", deps = ["@pypi//rich"])
+      </code></pre>
+      <p class="dim" style="margin-top:.5em;">
+        No <code>pip install</code>. No virtualenv. No system Python.<br>
+        <code>bazel run //python/demo:demo</code>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- 22 ── TAKEAWAYS ─────────────────────────────────────────────────────── -->
 <section>
   <h2>Takeaways</h2>
   <div style="font-size:.82em; line-height:2.1; margin-top:.4em;">
     <p>🔒 &nbsp;<strong>Hermetic + incremental</strong> — same inputs always produce the same outputs</p>
     <p>📦 &nbsp;<strong>Bzlmod</strong> — all deps in <code>MODULE.bazel</code>; BCR or <code>http_archive</code> for the rest</p>
-    <p>🔀 &nbsp;<strong>Polyglot</strong> — C++, Go, and Proto in one graph, one <code>bazel build //...</code></p>
+    <p>🔀 &nbsp;<strong>Polyglot</strong> — C++, Go, Python, and Proto in one graph, one <code>bazel build //...</code></p>
     <p>🧪 &nbsp;<strong>Testing first-class</strong> — unit tests, integration tests, cross-language <code>sh_test</code></p>
     <p>⚡ &nbsp;<strong>Cache everything</strong> — local disk + CI, shared by content hash</p>
     <p>🔍 &nbsp;<strong>Queryable graph</strong> — <code>query</code> / <code>cquery</code> / <code>aquery</code> to inspect any dependency</p>
@@ -568,7 +613,7 @@ bazel run //:refresh_compile_commands
      FAQ SECTION
      ══════════════════════════════════════════════════════════════════════════ -->
 
-<!-- 22 ── FAQ DIVIDER ────────────────────────────────────────────────────── -->
+<!-- 23 ── FAQ DIVIDER ────────────────────────────────────────────────────── -->
 <section class="center">
   <h2 style="font-size:1.6em; color:#fff;">FAQ</h2>
   <p style="color:var(--accent); font-size:.9em; margin-top:.4em;">Common questions from C++ and Go teams</p>
@@ -577,20 +622,24 @@ bazel run //:refresh_compile_commands
 <!-- 23 ── FAQ: PINNING A COMPILER ───────────────────────────────────────── -->
 <section>
   <h2>FAQ: Can I pin a specific Clang version?</h2>
-  <p class="small">Yes — use <code>toolchains_llvm</code> from the BCR. It downloads and pins an exact LLVM release; no system Clang required.</p>
+  <p class="small">Yes — <code>toolchains_llvm</code> from the BCR downloads an exact pre-built LLVM release. This repo uses LLVM 18.1.8 for Linux CI; macOS uses Xcode Clang (pre-built arm64 binaries top out at LLVM 17 on Apple Silicon).</p>
   <pre><code class="language-python" data-trim>
-# MODULE.bazel  (check BCR for current toolchains_llvm version)
-bazel_dep(name = "toolchains_llvm", version = "1.0.0")
+# MODULE.bazel
+bazel_dep(name = "toolchains_llvm", version = "1.7.0")
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
-llvm.toolchain(llvm_version = "17.0.6")   # pin the LLVM release
+llvm.toolchain(llvm_version = "18.1.8")   # highest Linux x86_64 release in 1.7.0
 use_repo(llvm, "llvm_toolchain")
-
-# register_toolchains makes this toolchain available for Bazel to select
-# when resolving the C++ toolchain for any cc_* rule.
-register_toolchains("@llvm_toolchain//:cc-toolchain-x86_64-linux")
+# No register_toolchains() — opt in per-platform instead (see .bazelrc)
   </code></pre>
-  <p class="dim" style="margin-top:.4em;">Without a registered toolchain, Bazel falls back to the system <code>gcc</code>/<code>g++</code> — the one place where the default setup isn't fully hermetic. This fixes it.</p>
+  <pre><code class="language-ini" data-trim>
+# .bazelrc — opt-in for Linux CI
+build:clang --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
+  </code></pre>
+  <pre><code class="language-bash" data-trim>
+bazel build --config=clang //cpp/...   # Linux: uses LLVM 18.1.8
+bazel build //cpp/...                  # macOS: uses Xcode Clang
+  </code></pre>
 </section>
 
 <!-- 24 ── FAQ: COMPILER FLAGS & SANITIZERS ──────────────────────────────── -->
@@ -622,7 +671,7 @@ bazel test --config=asan //...
   </code></pre>
 </section>
 
-<!-- 23 ── FAQ: CROSS-COMPILATION ────────────────────────────────────────── -->
+<!-- 26 ── FAQ: CROSS-COMPILATION ────────────────────────────────────────── -->
 <section>
   <h2>FAQ: Cross-compilation</h2>
   <p class="small">Bazel has first-class platform support. Define a platform target and select it at build time:</p>
@@ -642,7 +691,7 @@ bazel build --platforms=//platforms:linux_arm64 //cpp/app:app
   <p class="dim" style="margin-top:.4em;"><code>toolchains_llvm</code> supports cross-compilation out of the box — configure it with <code>exec_arch</code> and <code>target_arch</code>. This is generally cleaner than CMake toolchain files because the platform is a first-class build graph node, not an external file sourced before analysis.</p>
 </section>
 
-<!-- 24 ── FAQ: MIGRATING FROM CMAKE ─────────────────────────────────────── -->
+<!-- 27 ── FAQ: MIGRATING FROM CMAKE ─────────────────────────────────────── -->
 <section>
   <h2>FAQ: Migrating from CMake</h2>
   <div class="two-col" style="margin-bottom:.5em;">
