@@ -1,6 +1,6 @@
 # bazel-intro
 
-[![CI](https://github.com/YOUR_GITHUB_USERNAME/bazel-intro/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_GITHUB_USERNAME/bazel-intro/actions/workflows/ci.yml)
+[![CI](https://github.com/mike-boquard/bazel-intro/actions/workflows/ci.yml/badge.svg)](https://github.com/mike-boquard/bazel-intro/actions/workflows/ci.yml)
 
 A Bazel workspace demonstrating C++ and Go builds with libraries, executables,
 BCR dependencies, non-BCR dependencies, and unit tests.
@@ -11,7 +11,12 @@ Install [bazelisk](https://github.com/bazelbuild/bazelisk), which manages the
 Bazel version automatically using `.bazelversion`:
 
 ```bash
-brew install bazelisk   # macOS
+brew install bazelisk                      # macOS
+
+# Linux (amd64)
+curl -fsSL -o /usr/local/bin/bazel \
+  https://github.com/bazelbuild/bazelisk/releases/download/v1.29.0/bazelisk-linux-amd64
+chmod +x /usr/local/bin/bazel
 ```
 
 No separate Go installation is needed — Bazel downloads and caches the Go SDK.

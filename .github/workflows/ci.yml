@@ -5,9 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -22,8 +26,8 @@ jobs:
 
       - name: Install bazelisk
         run: |
-          curl -Lo /usr/local/bin/bazel \
-            https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+          curl -fsSL -o /usr/local/bin/bazel \
+            https://github.com/bazelbuild/bazelisk/releases/download/v1.29.0/bazelisk-linux-amd64
           chmod +x /usr/local/bin/bazel
 
       - name: Test
