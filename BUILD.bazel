@@ -4,9 +4,9 @@
 # enables top-level label references such as //:go.mod used by the Gazelle
 # go_deps extension in MODULE.bazel.
 #
-# This file also hosts the compile_commands refresh target, which generates
-# compile_commands.json so that clangd (the C++ language server) can resolve
-# workspace-rooted include paths like "cpp/greeter/greeter.h".
+# This file hosts two IDE-support targets:
+#   //:refresh_compile_commands — generates compile_commands.json for clangd (C++)
+#   //:gen_rust_project         — alias for rust-analyzer's rust-project.json
 #
 # Docs: https://bazel.build/concepts/build-files
 
@@ -34,4 +34,18 @@ refresh_compile_commands(
         "//cpp/...": "",
     },
     exclude_external_sources = True,
+)
+
+# Alias for rust-analyzer's rust-project.json generator.
+# Generates rust-project.json at the workspace root so rust-analyzer can
+# resolve crate imports without a Cargo.toml.
+#
+# Usage:
+#   bazel run //:gen_rust_project
+#   ./scripts/refresh_rust_project.sh
+#
+# Docs: https://github.com/bazelbuild/rules_rust/blob/main/tools/rust_analyzer/README.md
+alias(
+    name = "gen_rust_project",
+    actual = "@rules_rust//tools/rust_analyzer:gen_rust_project",
 )

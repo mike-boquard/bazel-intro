@@ -590,23 +590,33 @@ bazel aquery 'mnemonic("CppCompile", //cpp/greeter:greeter)' \
 
 <!-- 21 ── ERGONOMICS ─────────────────────────────────────────────────────── -->
 <section>
-  <h2>Dev ergonomics: clangd</h2>
-  <p class="small" style="margin-bottom:.7em;">Bazel uses workspace-rooted includes (<code>"cpp/greeter/greeter.h"</code>). clangd can't resolve these without a compilation database.</p>
-  <pre><code class="language-bash" data-trim>
-# Generate compile_commands.json using hedron_compile_commands (non-BCR dep)
+  <h2>Dev ergonomics: IDE support</h2>
+  <div class="two-col" style="gap:.8em;">
+    <div>
+      <p class="small" style="margin:0 0 .3em;"><strong>C++ — clangd</strong></p>
+      <p class="small dim">Bazel uses workspace-rooted includes. clangd needs a compilation database to resolve them.</p>
+      <pre><code class="language-bash" data-trim>
 bazel run //:refresh_compile_commands
-# or
-./scripts/refresh_compile_commands.sh
-  </code></pre>
-  <div class="two-col" style="margin-top:.5em;">
-    <div class="card">
-      <h4>C++</h4>
-      <p>Re-run after adding or modifying source files. File is written to the workspace root where clangd finds it automatically.</p>
+# or: ./scripts/refresh_compile_commands.sh
+      </code></pre>
+      <p class="dim" style="font-size:.7em;">Re-run after adding C++ source files. Uses <code>hedron_compile_commands</code> (non-BCR dep).</p>
     </div>
-    <div class="card">
-      <h4>Go</h4>
-      <p>gopls works out of the box via <code>go.mod</code> — no extra step needed.</p>
+    <div>
+      <p class="small" style="margin:0 0 .3em;"><strong>Rust — rust-analyzer</strong></p>
+      <p class="small dim">No <code>Cargo.toml</code> needed. <code>rules_rust</code> generates a <code>rust-project.json</code> that rust-analyzer understands natively.</p>
+      <pre><code class="language-bash" data-trim>
+bazel run //:gen_rust_project
+# or: ./scripts/refresh_rust_project.sh
+      </code></pre>
+      <pre><code class="language-json" data-trim>
+// .vscode/settings.json
+{ "rust-analyzer.linkedProjects": ["rust-project.json"] }
+      </code></pre>
     </div>
+  </div>
+  <div class="card" style="margin-top:.5em; font-size:.8em;">
+    <h4>Go</h4>
+    <p>gopls works out of the box via <code>go.mod</code> — no extra step needed.</p>
   </div>
 </section>
 

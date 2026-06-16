@@ -199,7 +199,9 @@ To add a new crate:
 bazel mod tidy
 ```
 
-## clangd / IDE support
+## IDE support
+
+### C++ — clangd
 
 Generate `compile_commands.json` so clangd can resolve C++ includes:
 
@@ -210,6 +212,27 @@ Generate `compile_commands.json` so clangd can resolve C++ includes:
 
 Re-run after adding or modifying C++ source files. The file is generated at
 the workspace root, where clangd finds it automatically.
+
+### Rust — rust-analyzer
+
+Generate `rust-project.json` so rust-analyzer can resolve crate imports
+without a `Cargo.toml`:
+
+```bash
+./scripts/refresh_rust_project.sh
+# or: bazel run //:gen_rust_project
+```
+
+Re-run after adding new `rust_library` or `rust_binary` targets. The file is
+generated at the workspace root. If your editor doesn't pick it up
+automatically, add this to `.vscode/settings.json` (already present in this
+repo):
+
+```json
+{
+  "rust-analyzer.linkedProjects": ["rust-project.json"]
+}
+```
 
 ## Adding a new Go dependency
 
