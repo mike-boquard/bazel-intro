@@ -1,0 +1,4 @@
+# Direct Python package requirements for this workspace.
+# Regenerate requirements_lock.txt after editing:
+#   pip-compile requirements.in --generate-hashes --output-file requirements_lock.txt
+rich==14.0.0

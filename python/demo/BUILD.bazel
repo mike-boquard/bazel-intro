@@ -1,0 +1,13 @@
+# BUILD.bazel — Hermetic Python binary using rules_python.
+#
+# @pypi//rich resolves to the pre-downloaded rich package declared in
+# requirements_lock.txt (locked with SHA-256 hashes) and fetched by
+# pip.parse() in MODULE.bazel.  No system pip, no virtualenv needed.
+load("@rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "demo",
+    srcs = ["main.py"],
+    main = "main.py",
+    deps = ["@pypi//rich"],
+)
