@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/mike-boquard/bazel-intro/actions/workflows/ci.yml/badge.svg)](https://github.com/mike-boquard/bazel-intro/actions/workflows/ci.yml)
 
-A Bazel workspace demonstrating C++, Go, and Python builds with libraries,
+A Bazel workspace demonstrating C++, Go, Python, and Rust builds with libraries,
 executables, BCR dependencies, non-BCR dependencies, hermetic pip packages,
-and a pinned LLVM compiler toolchain.
+a pinned LLVM compiler toolchain, and Rust crates via crate_universe.
 
 ## Prerequisites
 
@@ -29,8 +29,8 @@ export PATH="$HOME/.local/bin:$PATH"
 bazel version
 ```
 
-No separate Go or Python installation is needed — Bazel downloads and caches
-both SDKs automatically.
+No separate Go, Python, or Rust installation is needed — Bazel downloads and
+caches all SDKs and toolchains automatically.
 
 ## Project layout
 
@@ -51,6 +51,9 @@ go/
   client/               # Go gRPC client calling GreeterService
 python/
   demo/                 # Python binary demonstrating hermetic pip deps (rich)
+rust/
+  greeter/              # Rust library with inline #[cfg(test)] unit tests
+  app/                  # Rust binary (uses colored crate from crates.io)
 test/
   integration/          # sh_test: starts C++ server, calls Go client
 third_party/
@@ -94,6 +97,7 @@ bazel test //...
 # Individual test targets
 bazel test //cpp/greeter:greeter_test
 bazel test //go/greeter:greeter_test
+bazel test //rust/greeter:greeter_test
 bazel test //test/integration:greeter_integration_test
 ```
 
@@ -162,6 +166,30 @@ pip-compile requirements.in --generate-hashes --output-file requirements_lock.tx
 bazel mod tidy
 ```
 
+## Rust
+
+Demonstrates `rules_rust` with a crates.io dependency via `crate_universe`:
+
+```bash
+bazel run //rust/app:app
+bazel run //rust/app:app -- Alice
+
+# Tests use Rust's idiomatic inline #[cfg(test)] modules
+bazel test //rust/greeter:greeter_test
+```
+
+No system Rust installation is needed — Bazel downloads Rust 1.85.0 automatically.
+The `colored` crate is declared in MODULE.bazel via `crate.spec()` and fetched
+from crates.io by `crate_universe`.
+
+To add a new crate:
+
+```bash
+# 1. Add a crate.spec() call in MODULE.bazel
+# 2. Sync Bazel's view
+bazel mod tidy
+```
+
 ## clangd / IDE support
 
 Generate `compile_commands.json` so clangd can resolve C++ includes:
@@ -204,3 +232,5 @@ bazel run @gazelle//:gazelle -- go/
 | `grpc` | BCR | C++ gRPC runtime and `cc_grpc_library` codegen |
 | `google.golang.org/grpc` | Go module proxy | Go gRPC runtime |
 | `rich` | PyPI (requirements_lock.txt) | Terminal formatting in Python demo |
+| `rules_rust` | BCR | Rust build rules and hermetic rustc toolchain |
+| `colored` | crates.io (crate_universe) | Colorized output in Rust binary |

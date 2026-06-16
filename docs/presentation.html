@@ -88,7 +88,7 @@
     <li>Why Bazel — what problem it actually solves</li>
     <li>Core concepts: workspace, package, target, rule</li>
     <li>Bzlmod — modern dependency management</li>
-    <li>C++, Go, and Python — same patterns, different rules</li>
+    <li>C++, Go, Python, and Rust — same patterns, different rules</li>
     <li>Cross-language with Proto / gRPC</li>
     <li>Testing, caching (vs Ninja/CMake), and querying the build graph</li>
     <li>FAQ — compiler pinning, migration, Go, performance, rough edges</li>
@@ -655,13 +655,69 @@ py_binary(name = "demo", srcs = ["main.py"],
   </div>
 </section>
 
-<!-- 23 ── TAKEAWAYS ─────────────────────────────────────────────────────── -->
+<!-- 23 ── RUST ───────────────────────────────────────────────────────────── -->
+<section>
+  <h2>Rust with <code>rules_rust</code></h2>
+  <p class="small" style="margin-bottom:.5em;">Same hermetic story: pinned rustc + crates from crates.io via <code>crate_universe</code>. No system Rust required.</p>
+  <div class="two-col" style="gap:.8em;">
+    <div>
+      <p class="small" style="margin:0 0 .3em;"><strong>MODULE.bazel</strong></p>
+      <pre><code class="language-python" data-trim>
+bazel_dep(name = "rules_rust", version = "0.70.0")
+
+rust = use_extension(
+    "@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2021", versions = ["1.85.0"])
+use_repo(rust, "rust_toolchains")
+register_toolchains("@rust_toolchains//:all")
+
+# crates.io deps — analogous to go_deps for Go
+crate = use_extension(
+    "@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.spec(package = "colored", version = "2")
+crate.from_specs()
+use_repo(crate, "crates")
+      </code></pre>
+    </div>
+    <div>
+      <p class="small" style="margin:0 0 .3em;"><strong>rust/greeter/src/lib.rs — inline tests (idiomatic)</strong></p>
+      <pre><code class="language-rust" data-trim>
+pub fn hello(name: &str) -> String {
+    format!("Hello, {}!", name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn hello_with_name() {
+        assert_eq!(hello("World"), "Hello, World!");
+    }
+}
+      </code></pre>
+      <p class="small" style="margin:.5em 0 .3em;"><strong>BUILD.bazel</strong></p>
+      <pre><code class="language-python" data-trim>
+rust_library(name = "greeter", srcs = ["src/lib.rs"],
+             edition = "2021", visibility = ["//visibility:public"])
+
+# runs the #[cfg(test)] module inside the library crate
+rust_test(name = "greeter_test", crate = ":greeter")
+      </code></pre>
+      <p class="dim" style="margin-top:.4em;">
+        <code>bazel run //rust/app:app</code>&nbsp;·&nbsp;
+        <code>bazel test //rust/greeter:greeter_test</code>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- 24 ── TAKEAWAYS ─────────────────────────────────────────────────────── -->
 <section>
   <h2>Takeaways</h2>
   <div style="font-size:.82em; line-height:2.1; margin-top:.4em;">
     <p>🔒 &nbsp;<strong>Hermetic + incremental</strong> — same inputs always produce the same outputs</p>
     <p>📦 &nbsp;<strong>Bzlmod</strong> — all deps in <code>MODULE.bazel</code>; BCR or <code>http_archive</code> for the rest</p>
-    <p>🔀 &nbsp;<strong>Polyglot</strong> — C++, Go, Python, and Proto in one graph, one <code>bazel build //...</code></p>
+    <p>🔀 &nbsp;<strong>Polyglot</strong> — C++, Go, Python, Rust, and Proto in one graph, one <code>bazel build //...</code></p>
     <p>🧪 &nbsp;<strong>Testing first-class</strong> — unit tests, integration tests, cross-language <code>sh_test</code></p>
     <p>⚡ &nbsp;<strong>Cache everything</strong> — local disk + CI, shared by content hash</p>
     <p>🔍 &nbsp;<strong>Queryable graph</strong> — <code>query</code> / <code>cquery</code> / <code>aquery</code> to inspect any dependency</p>
@@ -672,13 +728,13 @@ py_binary(name = "demo", srcs = ["main.py"],
      FAQ SECTION
      ══════════════════════════════════════════════════════════════════════════ -->
 
-<!-- 24 ── FAQ DIVIDER ────────────────────────────────────────────────────── -->
+<!-- 25 ── FAQ DIVIDER ────────────────────────────────────────────────────── -->
 <section class="center">
   <h2 style="font-size:1.6em; color:#fff;">FAQ</h2>
   <p style="color:var(--accent); font-size:.9em; margin-top:.4em;">Common questions from C++ and Go teams</p>
 </section>
 
-<!-- 25 ── FAQ: PINNING A COMPILER ───────────────────────────────────────── -->
+<!-- 26 ── FAQ: PINNING A COMPILER ───────────────────────────────────────── -->
 <section>
   <h2>FAQ: Can I pin a specific Clang version?</h2>
   <p class="small">Yes — <code>toolchains_llvm</code> from the BCR downloads an exact pre-built LLVM release. This repo uses LLVM 18.1.8 for Linux CI; macOS uses Xcode Clang (pre-built arm64 binaries top out at LLVM 17 on Apple Silicon).</p>
@@ -701,7 +757,7 @@ bazel build //cpp/...                  # macOS: uses Xcode Clang
   </code></pre>
 </section>
 
-<!-- 26 ── FAQ: COMPILER FLAGS & SANITIZERS ──────────────────────────────── -->
+<!-- 27 ── FAQ: COMPILER FLAGS & SANITIZERS ──────────────────────────────── -->
 <section>
   <h2>FAQ: Custom flags &amp; sanitizers</h2>
   <p class="small" style="margin-bottom:.4em;"><strong>Three scopes for compiler flags:</strong></p>
@@ -730,7 +786,7 @@ bazel test --config=asan //...
   </code></pre>
 </section>
 
-<!-- 27 ── FAQ: CROSS-COMPILATION ────────────────────────────────────────── -->
+<!-- 28 ── FAQ: CROSS-COMPILATION ────────────────────────────────────────── -->
 <section>
   <h2>FAQ: Cross-compilation</h2>
   <p class="small">Bazel has first-class platform support. Define a platform target and select it at build time:</p>
@@ -750,7 +806,7 @@ bazel build --platforms=//platforms:linux_arm64 //cpp/app:app
   <p class="dim" style="margin-top:.4em;"><code>toolchains_llvm</code> supports cross-compilation out of the box — configure it with <code>exec_arch</code> and <code>target_arch</code>. This is generally cleaner than CMake toolchain files because the platform is a first-class build graph node, not an external file sourced before analysis.</p>
 </section>
 
-<!-- 28 ── FAQ: MIGRATING FROM CMAKE ─────────────────────────────────────── -->
+<!-- 29 ── FAQ: MIGRATING FROM CMAKE ─────────────────────────────────────── -->
 <section>
   <h2>FAQ: Migrating from CMake</h2>
   <div class="two-col" style="margin-bottom:.5em;">
@@ -776,7 +832,7 @@ cmake(
   <p class="dim" style="margin-top:.3em;">Go migration is easier — Gazelle generates BUILD files from <code>go.mod</code> automatically. C++ requires more manual work per package.</p>
 </section>
 
-<!-- 29 ── FAQ: SYSTEM & VENDORED DEPS ───────────────────────────────────── -->
+<!-- 30 ── FAQ: SYSTEM & VENDORED DEPS ───────────────────────────────────── -->
 <section>
   <h2>FAQ: System libraries &amp; vendored deps</h2>
   <p class="small" style="margin-bottom:.4em;"><strong>System libraries</strong> (OpenSSL, zlib, libcurl…) — three options, in order of preference:</p>
@@ -804,7 +860,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   </code></pre>
 </section>
 
-<!-- 30 ── FAQ: GO SPECIFICS ─────────────────────────────────────────────── -->
+<!-- 31 ── FAQ: GO SPECIFICS ─────────────────────────────────────────────── -->
 <section>
   <h2>FAQ: Go specifics</h2>
   <div class="three-col" style="margin-bottom:.5em;">
@@ -824,7 +880,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   <p class="dim">Gazelle handles the common case well — it reads <code>import</code> statements and generates BUILD files automatically. Edge cases (build tags, internal packages) require manual tuning.</p>
 </section>
 
-<!-- 31 ── FAQ: PERFORMANCE & REMOTE EXECUTION ───────────────────────────── -->
+<!-- 32 ── FAQ: PERFORMANCE & REMOTE EXECUTION ───────────────────────────── -->
 <section>
   <h2>FAQ: Performance &amp; scale</h2>
   <div class="two-col" style="margin-bottom:.5em;">
@@ -840,7 +896,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   <p class="small"><strong>Parallelism:</strong> <code>--jobs=N</code> controls concurrency (default = CPU count). Bazel schedules more aggressively than Ninja because it holds the full dependency graph and knows exactly which actions are independent.</p>
 </section>
 
-<!-- 32 ── FAQ: ROUGH EDGES ───────────────────────────────────────────────── -->
+<!-- 33 ── FAQ: ROUGH EDGES ───────────────────────────────────────────────── -->
 <section>
   <h2>FAQ: Honest rough edges</h2>
   <div class="three-col">
@@ -860,7 +916,7 @@ http_archive(name = "mylib", url = "file:///path/to/vendor/mylib.tar.gz", ...)
   <p class="dim" style="margin-top:.5em;">These are real. Worth setting expectations with the team upfront rather than discovering them in week two.</p>
 </section>
 
-<!-- 33 ── Q&A ────────────────────────────────────────────────────────────── -->
+<!-- 34 ── Q&A ────────────────────────────────────────────────────────────── -->
 <section class="center">
   <h2>Questions?</h2>
   <p class="dim" style="margin-top:.8em;">github.com/mike-boquard/bazel-intro</p>

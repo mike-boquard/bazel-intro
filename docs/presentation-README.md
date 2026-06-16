@@ -59,14 +59,15 @@ python3 -m http.server 8000 --directory .
 | 20 | Querying the build graph — query, cquery, aquery |
 | 21 | Dev ergonomics — clangd / compile_commands.json |
 | 22 | Hermetic Python — rules_python, pip.parse, requirements_lock.txt |
-| 23 | Takeaways |
-| 24 | FAQ divider |
-| 25 | FAQ: Pinning a Clang version (toolchains_llvm, --config=clang) |
-| 26 | FAQ: Custom flags & sanitizers |
-| 27 | FAQ: Cross-compilation |
-| 28 | FAQ: Migrating from CMake |
-| 29 | FAQ: System & vendored deps |
-| 30 | FAQ: Go specifics |
-| 31 | FAQ: Performance & remote execution |
-| 32 | FAQ: Rough edges |
-| 33 | Q&A |
+| 23 | Rust — rules_rust, crate_universe, inline #[cfg(test)] tests, colored crate |
+| 24 | Takeaways |
+| 25 | FAQ divider |
+| 26 | FAQ: Pinning a Clang version (toolchains_llvm, --config=clang) |
+| 27 | FAQ: Custom flags & sanitizers |
+| 28 | FAQ: Cross-compilation |
+| 29 | FAQ: Migrating from CMake |
+| 30 | FAQ: System & vendored deps |
+| 31 | FAQ: Go specifics |
+| 32 | FAQ: Performance & remote execution |
+| 33 | FAQ: Rough edges |
+| 34 | Q&A |
