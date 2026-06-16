@@ -9,6 +9,8 @@ load("@rules_go//go:def.bzl", "go_binary")
 go_binary(
     name = "client",
     srcs = ["main.go"],
+    # pure = "on" forces pure-Go compilation (no cgo). Required on macOS where
+    # cgo-linked Go binaries built by Bazel lack LC_UUID and crash at load time.
     pure = "on",
     visibility = ["//visibility:public"],
     deps = [

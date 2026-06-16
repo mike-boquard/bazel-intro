@@ -3,6 +3,8 @@
 # asserts the response is "Hello, World!".
 set -euo pipefail
 
+[[ $# -eq 2 ]] || { echo "Usage: $0 <server-bin> <client-bin>"; exit 1; }
+
 SERVER_BIN=$1
 CLIENT_BIN=$2
 
