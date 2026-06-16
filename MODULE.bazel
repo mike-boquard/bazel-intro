@@ -40,6 +40,26 @@ bazel_dep(name = "abseil-cpp", version = "20240722.0")
 bazel_dep(name = "protobuf", version = "29.3")
 bazel_dep(name = "grpc", version = "1.69.0")
 
+# ── C++ toolchain: LLVM/Clang (BCR) ──────────────────────────────────────────
+# toolchains_llvm downloads a specific pre-built LLVM release from GitHub and
+# makes it available as a named C++ toolchain.  It is NOT globally registered
+# here because the pre-built macOS arm64 binaries in toolchains_llvm 1.7.0 top
+# out at LLVM 17 and crash while linking complex projects on Apple Silicon.
+#
+# Usage:
+#   Linux (CI/remote):  bazel build --config=clang //cpp/...
+#   macOS (dev):        bazel build //cpp/...   # uses system Xcode Clang
+#
+# To change the LLVM version, update llvm_version below (run `bazel sync`).
+# Available Linux x86_64 versions: run
+#   grep x86_64-linux external/toolchains_llvm*/llvm_distributions.bzl
+# BCR: https://registry.bazel.build/modules/toolchains_llvm
+bazel_dep(name = "toolchains_llvm", version = "1.7.0")
+
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm.toolchain(llvm_version = "18.1.8")
+use_repo(llvm, "llvm_toolchain")
+
 # ── Non-BCR C++ dependencies (via module extension) ───────────────────────────
 # Libraries absent from the BCR are fetched with http_archive() inside a module
 # extension defined in //third_party:extensions.bzl.  Each repo name must be
@@ -73,6 +93,34 @@ go_sdk.download(version = "1.22.5")
 #   3. bazel run @gazelle//:gazelle -- <pkg-dir>         (regenerates BUILD files)
 #
 # Docs: https://github.com/bazelbuild/bazel-gazelle/blob/master/docs/go_repository.md
+# ── Python toolchain and rules (BCR) ─────────────────────────────────────────
+# rules_python provides py_binary / py_library / py_test rules and downloads a
+# hermetic Python interpreter — no system Python is required.  pip.parse() reads
+# requirements_lock.txt (SHA-256 hashes included) and fetches every package into
+# a content-addressed cache; the result is fully reproducible across machines.
+#
+# To add a package:
+#   1. Add it to requirements.in
+#   2. pip-compile requirements.in --generate-hashes -o requirements_lock.txt
+#   3. bazel mod tidy  (may update use_repo if new packages introduce new repos)
+#
+# BCR: https://registry.bazel.build/modules/rules_python
+bazel_dep(name = "rules_python", version = "1.0.0")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(python_version = "3.12")
+use_repo(python, "python_3_12", "pythons_hub")
+
+register_toolchains("@pythons_hub//:all")
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "pypi",
+    python_version = "3.12",
+    requirements_lock = "//:requirements_lock.txt",
+)
+use_repo(pip, "pypi")
+
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
 go_deps.from_file(go_mod = "//:go.mod")
 use_repo(

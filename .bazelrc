@@ -14,3 +14,9 @@ build --disk_cache=~/.cache/bazel/disk-cache
 
 # Test UX
 test --test_output=errors
+
+# Toolchain configs
+# --config=clang  Uses the pinned LLVM toolchain (see MODULE.bazel: toolchains_llvm).
+#                 Intended for Linux x86_64.  On macOS, omit this flag to use the
+#                 system Xcode Clang, which works with all dependencies including gRPC.
+build:clang --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
