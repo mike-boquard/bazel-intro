@@ -1,5 +1,7 @@
 # bazel-intro
 
+[![CI](https://github.com/YOUR_GITHUB_USERNAME/bazel-intro/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_GITHUB_USERNAME/bazel-intro/actions/workflows/ci.yml)
+
 A Bazel workspace demonstrating C++ and Go builds with libraries, executables,
 BCR dependencies, non-BCR dependencies, and unit tests.
 
