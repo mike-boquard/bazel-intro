@@ -4,13 +4,16 @@
 # enables top-level label references such as //:go.mod used by the Gazelle
 # go_deps extension in MODULE.bazel.
 #
-# This file hosts three IDE/tooling targets:
+# This file hosts tooling targets:
 #   //:refresh_compile_commands — generates compile_commands.json for clangd (C++)
 #   //:gen_rust_project         — alias for rust-analyzer's rust-project.json
 #   //:clang-format             — alias for clang-format 18.1.8 from the LLVM toolchain
+#   //:buildifier               — formats all BUILD.bazel / .bzl / MODULE.bazel files
+#   //:buildifier.check         — same, but exits 1 if any file would change (CI)
 #
 # Docs: https://bazel.build/concepts/build-files
 
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
 load(
     "@hedron_compile_commands//:refresh_compile_commands.bzl",
     "refresh_compile_commands",
@@ -31,10 +34,10 @@ load(
 # Docs: https://github.com/hedronvision/bazel-compile-commands-extractor
 refresh_compile_commands(
     name = "refresh_compile_commands",
+    exclude_external_sources = True,
     targets = {
         "//cpp/...": "",
     },
-    exclude_external_sources = True,
 )
 
 # Alias for rust-analyzer's rust-project.json generator.
@@ -60,4 +63,26 @@ alias(
 alias(
     name = "clang-format",
     actual = "@llvm_toolchain//:clang-format",
+)
+
+# Formats all BUILD.bazel, .bzl, and MODULE.bazel files in-place.
+# Uses buildifier_prebuilt from the BCR — no system install needed.
+#
+# Usage:
+#   bazel run //:buildifier          # format in-place
+#   bazel run //:buildifier.check    # exit 1 if any file would change (CI)
+#
+# Docs: https://github.com/keith/buildifier-prebuilt
+buildifier(
+    name = "buildifier",
+    exclude_patterns = ["./.git/*"],
+    lint_mode = "warn",
+    mode = "fix",
+)
+
+buildifier(
+    name = "buildifier.check",
+    exclude_patterns = ["./.git/*"],
+    lint_mode = "warn",
+    mode = "diff",
 )

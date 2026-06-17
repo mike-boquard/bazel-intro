@@ -5,6 +5,8 @@
 # to the runfile path at test execution time.
 # Docs: https://bazel.build/reference/be/shell#sh_test
 
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
 sh_test(
     name = "greeter_integration_test",
     srcs = ["greeter_test.sh"],
@@ -13,7 +15,7 @@ sh_test(
         "$(rootpath //go/client:client)",
     ],
     data = [
-        "//cpp/server:server",
-        "//go/client:client",
+        "//cpp/server",
+        "//go/client",
     ],
 )

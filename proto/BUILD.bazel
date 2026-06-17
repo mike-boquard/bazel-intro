@@ -6,13 +6,14 @@
 #         └─ greeter_cc_grpc (cc_grpc_library) ← C++ service stubs
 #     └─ greeter_go_proto  (go_proto_library)  ← Go message + service stubs
 #
-# proto_library is a native Bazel rule (no load needed).
 # Docs: https://bazel.build/reference/be/protocol-buffer#proto_library
 #
 # cc_grpc_library docs: https://grpc.io/docs/languages/cpp/bazel/
 # go_proto_library docs: https://github.com/bazelbuild/rules_go/blob/main/docs/proto/core.md
 
 load("@grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("@protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
+load("@protobuf//bazel:proto_library.bzl", "proto_library")
 load("@rules_go//proto:def.bzl", "go_proto_library")
 
 # language-neutral proto target; consumed by all language-specific rules below
@@ -23,11 +24,10 @@ proto_library(
 )
 
 # Generates greeter.pb.h / greeter.pb.cc (C++ message classes).
-# cc_proto_library is a native Bazel rule provided by the protobuf BCR module.
 cc_proto_library(
     name = "greeter_cc_proto",
-    deps = [":greeter_proto"],
     visibility = ["//visibility:public"],
+    deps = [":greeter_proto"],
 )
 
 # Generates greeter.grpc.pb.h / greeter.grpc.pb.cc (C++ service stubs).
@@ -36,8 +36,8 @@ cc_grpc_library(
     name = "greeter_cc_grpc",
     srcs = [":greeter_proto"],
     grpc_only = True,
-    deps = [":greeter_cc_proto"],
     visibility = ["//visibility:public"],
+    deps = [":greeter_cc_proto"],
 )
 
 # Generates Go protobuf + gRPC code in one step.

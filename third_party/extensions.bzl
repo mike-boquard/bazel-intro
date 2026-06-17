@@ -9,9 +9,12 @@
 #   use_repo(non_registry, "<name>")
 #
 # Docs: https://bazel.build/external/extension
+
+"""Bzlmod module extension for non-BCR C++ dependencies."""
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-def _non_registry_deps_impl(ctx):
+def _non_registry_deps_impl(_ctx):
     # spdlog: fast C++ logging library, header-only mode.
     # Not in the BCR, so fetched directly from the GitHub release tarball.
     # build_file injects //third_party:spdlog.BUILD so Bazel can compile it.

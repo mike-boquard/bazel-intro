@@ -142,6 +142,7 @@ use_repo(
 #
 # BCR: https://registry.bazel.build/modules/rules_rust
 RUST_EDITION = "2021"
+
 RUST_VERSION = "1.85.0"
 
 bazel_dep(name = "rules_rust", version = "0.70.0")
@@ -152,10 +153,28 @@ rust.toolchain(
     versions = [RUST_VERSION],
 )
 use_repo(rust, "rust_toolchains")
+
 register_toolchains("@rust_toolchains//:all")
+
+# ── Buildifier — Bazel file formatter/linter ──────────────────────────────────
+# buildifier formats BUILD.bazel, .bzl, and MODULE.bazel files.
+# dev_dependency = True keeps it out of the transitive dep graph for consumers.
+#
+# BCR: https://registry.bazel.build/modules/buildifier_prebuilt
+bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
+
+# ── Shell rules ───────────────────────────────────────────────────────────────
+# rules_shell provides sh_binary / sh_test rules. Native sh_test is deprecated
+# in Bazel 8+ and requires an explicit load from this module going forward.
+#
+# BCR: https://registry.bazel.build/modules/rules_shell
+bazel_dep(name = "rules_shell", version = "0.3.0")
 
 # ── Rust crate dependencies (crates.io) ───────────────────────────────────────
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
-crate.spec(package = "colored", version = "2")
+crate.spec(
+    package = "colored",
+    version = "2",
+)
 crate.from_specs()
 use_repo(crate, "crates")
