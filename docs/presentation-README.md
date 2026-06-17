@@ -58,7 +58,7 @@ python3 -m http.server 8000 --directory .
 | 19 | Caching comparison — Ninja/CMake vs Bazel |
 | 20 | Caching config — disk cache + CI restore-keys |
 | 21 | Querying the build graph — query, cquery, aquery |
-| 22 | Dev ergonomics — clangd / compile_commands.json |
+| 22 | Dev ergonomics — clangd, rust-analyzer, gopls, buildifier |
 | 23 | Hermetic Python — rules_python, pip.parse, requirements_lock.txt |
 | 24 | Rust — rules_rust, crate_universe, inline #[cfg(test)] tests, colored crate |
 | 25 | Takeaways |

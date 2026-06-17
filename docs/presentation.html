@@ -620,7 +620,7 @@ bazel aquery 'mnemonic("CppCompile", //cpp/greeter:greeter)' \
 
 <!-- 22 ── ERGONOMICS ───────────────────────────────────────────────────────  -->
 <section>
-  <h2>Dev ergonomics: IDE support</h2>
+  <h2>Dev ergonomics: tooling</h2>
   <div class="two-col" style="gap:.8em;">
     <div>
       <p class="small" style="margin:0 0 .3em;"><strong>C++ — clangd</strong></p>
@@ -644,9 +644,19 @@ bazel run //:gen_rust_project
       </code></pre>
     </div>
   </div>
-  <div class="card" style="margin-top:.5em; font-size:.8em;">
-    <h4>Go</h4>
-    <p>gopls works out of the box via <code>go.mod</code> — no extra step needed.</p>
+  <div class="two-col" style="margin-top:.5em; gap:.8em;">
+    <div class="card" style="font-size:.8em;">
+      <h4>Go — gopls</h4>
+      <p>Works out of the box via <code>go.mod</code> — no extra step needed.</p>
+    </div>
+    <div class="card" style="font-size:.8em;">
+      <h4>Buildifier — Bazel file linter</h4>
+      <p>Formats and lints <code>BUILD.bazel</code>, <code>.bzl</code>, and <code>MODULE.bazel</code> files. BCR dep — no system install.</p>
+      <pre><code class="language-bash" data-trim>
+bazel run //:buildifier        # format in-place
+bazel run //:buildifier.check  # CI check mode
+      </code></pre>
+    </div>
   </div>
 </section>
 

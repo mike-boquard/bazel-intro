@@ -236,6 +236,24 @@ repo):
 }
 ```
 
+## Bazel file formatting (buildifier)
+
+`BUILD.bazel`, `.bzl`, and `MODULE.bazel` files are formatted and linted with
+[buildifier](https://github.com/keith/buildifier-prebuilt), fetched from the
+BCR — no system install required.
+
+```bash
+# Format all Bazel files in-place
+bazel run //:buildifier
+
+# Check mode — exit 1 if any file would change (useful in CI)
+bazel run //:buildifier.check
+```
+
+Buildifier also warns about deprecated patterns (e.g., functions that must be
+explicitly loaded in Bazel 8+). The repo is kept warning-free so `buildifier.check`
+can be added to CI as a quality gate.
+
 ## C++ formatting (clang-format)
 
 C++ source files are formatted with clang-format 18.1.8, fetched from the
@@ -287,3 +305,5 @@ bazel run @gazelle//:gazelle -- go/
 | `rich` | PyPI (requirements_lock.txt) | Terminal formatting in Python demo |
 | `rules_rust` | BCR | Rust build rules and hermetic rustc toolchain |
 | `colored` | crates.io (crate_universe) | Colorized output in Rust binary |
+| `buildifier_prebuilt` | BCR (dev) | Bazel file formatter/linter (`//:buildifier`) |
+| `rules_shell` | BCR | `sh_test` rule (explicit load required in Bazel 8+) |
