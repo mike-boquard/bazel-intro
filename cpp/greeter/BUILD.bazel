@@ -15,8 +15,8 @@ cc_library(
     name = "greeter",
     srcs = ["greeter.cc"],
     hdrs = ["greeter.h"],
-    deps = ["@abseil-cpp//absl/strings"],  # BCR dep; provides absl::StrCat
     visibility = ["//visibility:public"],  # allows //cpp/app to depend on this
+    deps = ["@abseil-cpp//absl/strings"],  # BCR dep; provides absl::StrCat
 )
 
 cc_test(

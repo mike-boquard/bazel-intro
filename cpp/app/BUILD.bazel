@@ -13,7 +13,7 @@ cc_binary(
     name = "app",
     srcs = ["main.cc"],
     deps = [
-        "//cpp/greeter",     # internal dep — workspace-rooted label
-        "@spdlog//:spdlog",  # non-BCR dep via //third_party:extensions.bzl
+        "//cpp/greeter",  # internal dep — workspace-rooted label
+        "@spdlog",  # non-BCR dep via //third_party:extensions.bzl
     ],
 )

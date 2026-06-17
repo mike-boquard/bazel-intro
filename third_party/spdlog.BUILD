@@ -16,9 +16,9 @@ cc_library(
     name = "spdlog",
     # Glob all headers from spdlog's include directory.
     hdrs = glob(["include/**/*.h"]),
-    # Make #include "spdlog/spdlog.h" resolvable without a path prefix.
-    includes = ["include"],
     # Activate header-only mode — disables the precompiled spdlog.cpp.
     defines = ["SPDLOG_HEADER_ONLY"],
+    # Make #include "spdlog/spdlog.h" resolvable without a path prefix.
+    includes = ["include"],
     visibility = ["//visibility:public"],
 )

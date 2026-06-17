@@ -17,7 +17,7 @@ go_binary(
     name = "app",
     srcs = ["main.go"],
     deps = [
-        "//go/greeter",                    # internal library
-        "@com_github_fatih_color//:color", # third-party via go.mod + Gazelle
+        "//go/greeter",  # internal library
+        "@com_github_fatih_color//:color",  # third-party via go.mod + Gazelle
     ],
 )
