@@ -23,6 +23,10 @@ bazel query '//...'
 ```
 
 ```
+//:buildifier
+//:buildifier.check
+//:clang-format
+//:gen_rust_project
 //:refresh_compile_commands
 //:refresh_compile_commands.check_python_version.py
 //:refresh_compile_commands.py
@@ -171,6 +175,10 @@ bazel cquery '//...'
 ```
 
 ```
+//:buildifier (0c99c1c)
+//:buildifier.check (0c99c1c)
+//:clang-format (796b1f2)
+//:gen_rust_project (796b1f2)
 //:refresh_compile_commands (0c99c1c)
 //:refresh_compile_commands.check_python_version.py (0c99c1c)
 //:refresh_compile_commands.py (0c99c1c)
@@ -182,6 +190,12 @@ bazel cquery '//...'
 //go/client:client (0c99c1c)
 //go/greeter:greeter (0c99c1c)
 //go/greeter:greeter_test (796b1f2)
+//proto:_greeter_cc_grpc_grpc_codegen (0c99c1c)
+//proto:greeter_cc_grpc (0c99c1c)
+//proto:greeter_cc_proto (0c99c1c)
+//proto:greeter_go_proto (0c99c1c)
+//proto:greeter_go_proto (92c35a6)
+//proto:greeter_proto (0c99c1c)
 //python/demo:demo (0c99c1c)
 //rust/app:app (0c99c1c)
 //rust/greeter:greeter (0c99c1c)

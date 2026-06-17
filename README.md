@@ -130,8 +130,8 @@ bazel test //test/integration:greeter_integration_test
 ```
 
 The proto definition lives in `proto/greeter.proto` and its `BUILD.bazel` produces
-three targets: `greeter_proto` (language-neutral), `greeter_cc_grpc` (C++ stubs),
-and `greeter_go_proto` (Go stubs).
+four targets: `greeter_proto` (language-neutral), `greeter_cc_proto` (C++ message
+classes), `greeter_cc_grpc` (C++ service stubs), and `greeter_go_proto` (Go stubs).
 
 ## C++ compiler toolchain
 
