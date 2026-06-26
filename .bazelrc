@@ -1,6 +1,12 @@
 # Build correctness
 build --cxxopt=-std=c++17
 
+# Treat warnings as errors for our own C++ code only.
+# A global --cxxopt=-Werror would also apply to external deps (abseil, grpc,
+# protobuf, spdlog), which emit warnings we cannot fix.  --per_file_copt scopes
+# -Wall -Werror to first-party sources under cpp/ by matching their exec path.
+build --per_file_copt=^cpp/.*\.cc$@-Wall,-Werror
+
 # Build UX
 build --verbose_failures
 build --color=yes
