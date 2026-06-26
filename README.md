@@ -32,6 +32,26 @@ bazel version
 No separate Go, Python, or Rust installation is needed — Bazel downloads and
 caches all SDKs and toolchains automatically.
 
+## Dev container (Linux)
+
+To build and test on Linux without touching your host setup, open the repo in
+the included dev container (VS Code: **Dev Containers: Reopen in Container**, or
+`devcontainer up --workspace-folder .` with the devcontainer CLI).
+
+It is based on the most recent Ubuntu LTS (`ubuntu:26.04`) and installs only
+bazelisk plus a host C/C++ compiler — every other toolchain (Go, Rust, Python,
+LLVM) is fetched hermetically by Bazel. The Bazel cache lives in a named volume,
+so the heavy first build of gRPC/protobuf/abseil is not repeated on rebuilds.
+
+```bash
+# Inside the container, everything works exactly as on the host:
+bazel test //...
+bazel run //cpp/app:app
+```
+
+The base image is pinned in [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json);
+change `UBUNTU_VERSION` there (e.g. to `24.04`) if you need a different release.
+
 ## Project layout
 
 ```

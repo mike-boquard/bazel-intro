@@ -1,0 +1,34 @@
+{
+  "name": "bazel-intro (Ubuntu 26.04 LTS)",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      // Most recent Ubuntu LTS. Override to 24.04 if 26.04 is unavailable.
+      "UBUNTU_VERSION": "26.04"
+    }
+  },
+  "remoteUser": "vscode",
+
+  // Persist Bazel's output base and disk cache across container rebuilds so the
+  // heavy first build (gRPC, protobuf, abseil) isn't repeated every time. The
+  // path matches --disk_cache in .bazelrc (~/.cache/bazel/disk-cache).
+  "mounts": [
+    "source=bazel-intro-bazel-cache,target=/home/vscode/.cache/bazel,type=volume"
+  ],
+
+  // The named volume mounts in root-owned; hand it to the dev user, then prove
+  // the toolchain resolves by printing the Bazel version (fetches 7.4.1).
+  "postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/.cache && bazel version",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "BazelBuild.vscode-bazel",
+        "golang.go",
+        "rust-lang.rust-analyzer",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-python.python"
+      ]
+    }
+  }
+}
