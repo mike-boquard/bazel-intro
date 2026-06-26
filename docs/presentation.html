@@ -207,6 +207,7 @@ bazel aquery //cpp/app:app
   <p class="small" style="margin-top:.5em;">Labels follow the pattern <code style="color:var(--accent);">//package:target</code>.
   When the target name matches the directory, you can omit it:
   <code style="color:var(--accent);">//cpp/greeter</code> ≡ <code style="color:var(--accent);">//cpp/greeter:greeter</code></p>
+  <p class="dim" style="margin-top:.4em;">The package file can be named <code>BUILD</code> or <code>BUILD.bazel</code> — both work. If both exist in one directory, <code>BUILD.bazel</code> wins. This repo uses <code>BUILD.bazel</code> throughout for consistency and clearer editor syntax highlighting.</p>
 </section>
 
 <!-- 7 ── WHAT IS BZLMOD ────────────────────────────────────────────────────  -->
@@ -805,6 +806,7 @@ rust_test(name = "greeter_test", crate = ":greeter")
       </p>
     </div>
   </div>
+  <p class="dim" style="margin-top:.5em;">Prefer a real <code>Cargo.toml</code>? Swap <code>crate.from_specs()</code> for <code>crate.from_cargo(manifests = ["//:Cargo.toml"], cargo_lockfile = "//:Cargo.lock")</code> — <code>crate_universe</code> reads your existing manifest + lockfile instead of inline specs. This repo uses <code>from_specs()</code> to keep everything in <code>MODULE.bazel</code> with no extra Cargo files.</p>
 </section>
 
 <!-- 26 ── TAKEAWAYS ───────────────────────────────────────────────────────  -->

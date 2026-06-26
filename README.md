@@ -65,6 +65,11 @@ scripts/
   format_cpp.sh                 # Format all C++ files using clang-format
 ```
 
+> **`BUILD` vs `BUILD.bazel`:** Bazel accepts either filename for a package.
+> If both exist in the same directory, `BUILD.bazel` takes precedence. This
+> repo uses `BUILD.bazel` everywhere for consistency and clearer editor
+> highlighting.
+
 ## Build
 
 ```bash
@@ -200,6 +205,25 @@ To add a new crate:
 # 2. Sync Bazel's view
 bazel mod tidy
 ```
+
+### Using a `Cargo.toml` instead
+
+This repo declares crates inline with `crate.spec()` + `crate.from_specs()`,
+keeping all dependency info in `MODULE.bazel` with no Cargo files. If you'd
+rather drive `crate_universe` from a real Cargo manifest (e.g. an existing
+Cargo project), swap `from_specs()` for `from_cargo()`:
+
+```starlark
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.from_cargo(
+    cargo_lockfile = "//:Cargo.lock",
+    manifests = ["//:Cargo.toml"],
+)
+use_repo(crate, "crates")
+```
+
+`crate_universe` then reads your `Cargo.toml` / `Cargo.lock` directly. Both
+approaches produce the same `@crates//:<name>` labels used in BUILD files.
 
 ## IDE support
 
