@@ -895,7 +895,12 @@ ColumnLimit: 100
       <p><code>build --cxxopt=-std=c++17</code> — applied to every build</p>
     </div>
   </div>
-  <p class="small"><strong>Sanitizers</strong> — add a named config to <code>.bazelrc</code>:</p>
+  <p class="small"><strong>Scope flags to your own code</strong> — <code>--cxxopt</code> also hits external deps (abseil, grpc…), which emit warnings you can't fix. <code>--per_file_copt</code> matches a regex on the source path, so warnings-as-errors apply to first-party files only:</p>
+  <pre><code class="language-ini" data-trim>
+# .bazelrc — -Wall -Werror for our sources under cpp/, not external deps
+build --per_file_copt=^cpp/.*\.cc$@-Wall,-Werror
+  </code></pre>
+  <p class="small" style="margin-top:.4em;"><strong>Sanitizers</strong> — add a named config to <code>.bazelrc</code>:</p>
   <pre><code class="language-ini" data-trim>
 build:asan  --copt=-fsanitize=address   --linkopt=-fsanitize=address
 build:tsan  --copt=-fsanitize=thread    --linkopt=-fsanitize=thread
