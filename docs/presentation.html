@@ -186,7 +186,7 @@
     </div>
   </div>
   <pre><code class="language-bash" data-trim>
-# Phase breakdown visible with --explain
+# Log why each target was (re)built or hit cache
 bazel build //... --explain=/tmp/build.log
 
 # What actions Bazel will run (the execution plan)
@@ -396,10 +396,12 @@ message HelloReply   { string message = 1; }
 <!-- 15 ── PROTO BUILD ──────────────────────────────────────────────────────  -->
 <section>
   <h2>Proto build targets</h2>
-  <p class="small" style="margin-bottom:.4em;"><code>proto/BUILD.bazel</code> turns the single <code>.proto</code> file into three usable targets — one for each language plus the language-neutral base:</p>
+  <p class="small" style="margin-bottom:.4em;"><code>proto/BUILD.bazel</code> turns the single <code>.proto</code> file into four targets — a language-neutral base plus C++ message, C++ service-stub, and Go targets:</p>
   <pre><code class="language-python" data-trim>
-# proto/BUILD.bazel
+# proto/BUILD.bazel — in Bazel 8 these rules must be loaded explicitly
 load("@grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("@protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
+load("@protobuf//bazel:proto_library.bzl", "proto_library")
 load("@rules_go//proto:def.bzl", "go_proto_library")
 
 proto_library(name = "greeter_proto", srcs = ["greeter.proto"],

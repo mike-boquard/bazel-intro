@@ -1,3 +1,12 @@
+# BUILD.bazel — Rust greeter executable.
+#
+# rust_binary compiles src/main.rs into a standalone binary.  It depends on:
+#   //rust/greeter    — the internal greeter library from this workspace.
+#   @crates//:colored — the `colored` crate from crates.io, fetched by
+#                       crate_universe (declared via crate.spec() in MODULE.bazel).
+#
+# Run with: bazel run //rust/app:app
+# Docs: https://bazelbuild.github.io/rules_rust/defs.html
 load("@rules_rust//rust:defs.bzl", "rust_binary")
 
 rust_binary(

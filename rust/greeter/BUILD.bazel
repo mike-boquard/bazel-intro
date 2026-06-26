@@ -1,3 +1,14 @@
+# BUILD.bazel — Rust greeter library and unit tests.
+#
+# rust_library compiles src/lib.rs into a Rust library crate importable by
+# other Rust targets in this workspace (here, //rust/app).
+#
+# rust_test with `crate = ":greeter"` recompiles the library with the test
+# harness enabled and runs its inline #[cfg(test)] modules — the idiomatic
+# Rust pattern where tests live in the same file as the code they exercise.
+#
+# Run tests with: bazel test //rust/greeter:greeter_test
+# Docs: https://bazelbuild.github.io/rules_rust/defs.html
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
