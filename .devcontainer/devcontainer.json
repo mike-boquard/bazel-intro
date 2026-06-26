@@ -9,6 +9,15 @@
   },
   "remoteUser": "vscode",
 
+  // Bazel's Linux sandbox needs unprivileged user namespaces; some Docker
+  // setups block the required syscalls under the default seccomp profile,
+  // which surfaces as "sandbox setup failed". Relaxing seccomp for this local
+  // test container lets the sandbox work without extra capabilities.
+  "runArgs": [
+    "--security-opt",
+    "seccomp=unconfined"
+  ],
+
   // Persist Bazel's output base and disk cache across container rebuilds so the
   // heavy first build (gRPC, protobuf, abseil) isn't repeated every time. The
   // path matches --disk_cache in .bazelrc (~/.cache/bazel/disk-cache).
