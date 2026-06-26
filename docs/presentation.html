@@ -287,13 +287,17 @@ use_repo(non_registry, "spdlog", "hedron_compile_commands")
 <!-- 10 ── NON-BCR ──────────────────────────────────────────────────────────  -->
 <section>
   <h2>Non-BCR dep: spdlog</h2>
-  <p class="small" style="margin-bottom:.6em;">Fetched directly from GitHub via a <em>module extension</em> in <code>third_party/extensions.bzl</code>:</p>
-  <pre><code class="language-python" data-trim>
+  <p class="small" style="margin-bottom:.5em;">Fetched directly from GitHub via a <em>module extension</em>, with a hand-written <code>BUILD</code> file injected into the downloaded archive:</p>
+  <div class="two-col" style="gap:.8em;">
+    <div>
+      <p class="small" style="margin:0 0 .3em;"><strong>third_party/extensions.bzl</strong></p>
+      <pre><code class="language-python" data-trim>
 def _non_registry_deps_impl(ctx):
     http_archive(
         name         = "spdlog",
-        url          = "https://github.com/gabime/spdlog/archive/refs/tags/v1.14.1.tar.gz",
-        sha256       = "1586508029a7d0670dfcb2d97575dcdc242d3868...",
+        url          = "https://github.com/gabime/spdlog/" +
+                       "archive/refs/tags/v1.14.1.tar.gz",
+        sha256       = "1586508029a7d0670df...",
         strip_prefix = "spdlog-1.14.1",
         build_file   = Label("//third_party:spdlog.BUILD"),
     )
@@ -301,8 +305,26 @@ def _non_registry_deps_impl(ctx):
 non_registry = module_extension(
     implementation = _non_registry_deps_impl,
 )
-  </code></pre>
-  <p class="dim" style="margin-top:.6em;"><code>build_file</code> injects our own Bazel rules into the downloaded archive — needed because spdlog doesn't ship a <code>BUILD.bazel</code>.</p>
+      </code></pre>
+    </div>
+    <div>
+      <p class="small" style="margin:0 0 .3em;"><strong>third_party/spdlog.BUILD</strong></p>
+      <pre><code class="language-python" data-trim>
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "spdlog",
+    hdrs = glob(["include/**/*.h"]),
+    # Header-only mode — no separate compile step.
+    defines = ["SPDLOG_HEADER_ONLY"],
+    # Makes #include "spdlog/spdlog.h" resolve.
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+)
+      </code></pre>
+    </div>
+  </div>
+  <p class="dim" style="margin-top:.5em;"><code>build_file</code> points at <code>spdlog.BUILD</code> because spdlog ships no Bazel rules of its own. The label resolves only because <code>third_party/</code> is itself a package (it has an empty <code>BUILD.bazel</code>).</p>
 </section>
 
 <!-- 11 ── C++ BUILD FILE ────────────────────────────────────────────────────  -->
