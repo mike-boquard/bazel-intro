@@ -32,6 +32,9 @@ bazel_dep(name = "abseil-cpp", version = "20250814.1")
 # protobuf — proto_library rule, protoc compiler, and cc_proto_library support.
 #             Provides the language-neutral proto_library and cc_proto_library
 #             rules used in proto/BUILD.bazel.
+#             Pinned to 33.x to stay in lockstep with grpc 1.76: grpc's
+#             grpc_build_system.bzl loads @protobuf//bazel:upb_proto_library.bzl,
+#             which protobuf 34+ removed.  Bump only together with grpc.
 #             BCR: https://registry.bazel.build/modules/protobuf
 # grpc      — C++ gRPC runtime and the cc_grpc_library codegen macro.
 #             The Go gRPC runtime comes from go.mod (google.golang.org/grpc),
@@ -144,6 +147,11 @@ use_repo(
 # To add a new crate:
 #   1. Add a crate.spec() call below
 #   2. bazel mod tidy
+#
+# Capped at 0.70.0: protobuf 33.6's MODULE.bazel loads
+# @rules_rust//crate_universe:extension.bzl (singular), which rules_rust 0.71+
+# renamed to extensions.bzl.  Bump only once the resolved protobuf no longer
+# references the singular path.
 #
 # BCR: https://registry.bazel.build/modules/rules_rust
 RUST_EDITION = "2021"
