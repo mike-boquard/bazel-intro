@@ -2,7 +2,7 @@
 #
 # Dev container image for building and testing bazel-intro on Linux.
 #
-# Based on the most recent Ubuntu LTS.  Bazel itself (7.4.1, pinned by
+# Based on the most recent Ubuntu LTS.  Bazel itself (9.1.1, pinned by
 # .bazelversion) plus the Go, Rust, Python, and LLVM toolchains are all
 # downloaded hermetically by Bazel, so this image only needs bazelisk, a host
 # C/C++ compiler, and the handful of utilities the build and tests shell out to.
@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install bazelisk as `bazel`.  It reads .bazelversion and fetches the matching
-# Bazel release (7.4.1) on first invocation.  Pinned to match the version used
+# Bazel release (9.1.1) on first invocation.  Pinned to match the version used
 # in .github/workflows/ci.yml.
 ARG BAZELISK_VERSION=v1.29.0
 RUN arch="$(dpkg --print-architecture)" \

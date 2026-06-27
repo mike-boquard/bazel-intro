@@ -213,7 +213,7 @@ bazel aquery //cpp/app:app
 <!-- 7 ── WHAT IS BZLMOD ────────────────────────────────────────────────────  -->
 <section>
   <h2>What is Bzlmod?</h2>
-  <p class="small" style="margin-bottom:.5em;">Bzlmod is Bazel's dependency management system, introduced in Bazel 5 and the default since Bazel 6. It replaces the older <code>WORKSPACE</code> file.</p>
+  <p class="small" style="margin-bottom:.5em;">Bzlmod is Bazel's dependency management system, introduced in Bazel 5, the default since Bazel 6, and the <em>only</em> option in Bazel 9 — the legacy <code>WORKSPACE</code> file was removed entirely. This repo targets Bazel 9.1.1.</p>
   <div class="two-col">
     <div class="card bad">
       <h4>WORKSPACE (old)</h4>
@@ -245,11 +245,11 @@ bazel aquery //cpp/app:app
 module(name = "bazel_intro", version = "0.0.1")
 
 # ── BCR deps (selected) ─────────────────────────────────────────────
-bazel_dep(name = "googletest",  version = "1.15.2")
-bazel_dep(name = "abseil-cpp",  version = "20240722.0")
-bazel_dep(name = "rules_go",    version = "0.50.1")
-bazel_dep(name = "protobuf",    version = "29.3")
-bazel_dep(name = "grpc",        version = "1.69.0")
+bazel_dep(name = "googletest",  version = "1.17.0.bcr.2")
+bazel_dep(name = "abseil-cpp",  version = "20250814.1")
+bazel_dep(name = "rules_go",    version = "0.61.1")
+bazel_dep(name = "protobuf",    version = "33.6")
+bazel_dep(name = "grpc",        version = "1.76.0.bcr.1")
 
 # ── Non-BCR deps via module extension ──────────────────────────────
 non_registry = use_extension("//third_party:extensions.bzl", "non_registry")
@@ -546,7 +546,7 @@ bazel test //... --nocache_test_results
     <div>
       <p class="small" style="margin:0 0 .3em;"><strong>MODULE.bazel</strong></p>
       <pre><code class="language-python" data-trim>
-bazel_dep(name = "googletest", version = "1.15.2")
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
       </code></pre>
       <p class="small" style="margin:.5em 0 .3em;"><strong>BUILD.bazel</strong></p>
       <pre><code class="language-python" data-trim>
@@ -737,7 +737,7 @@ bazel run //:buildifier.check  # CI check mode
     <div>
       <p class="small" style="margin:.0 0 .3em;"><strong>MODULE.bazel</strong></p>
       <pre><code class="language-python" data-trim>
-bazel_dep(name = "rules_python", version = "1.0.0")
+bazel_dep(name = "rules_python", version = "2.0.3")
 
 python = use_extension(
     "@rules_python//python/extensions:python.bzl", "python")
@@ -860,10 +860,10 @@ rust_test(name = "greeter_test", crate = ":greeter")
   <p class="small">Yes — <code>toolchains_llvm</code> from the BCR downloads an exact pre-built LLVM release. This repo uses LLVM 18.1.8 for Linux CI; macOS uses Xcode Clang (pre-built arm64 binaries top out at LLVM 17 on Apple Silicon).</p>
   <pre><code class="language-python" data-trim>
 # MODULE.bazel
-bazel_dep(name = "toolchains_llvm", version = "1.7.0")
+bazel_dep(name = "toolchains_llvm", version = "1.8.0")
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
-llvm.toolchain(llvm_version = "18.1.8")   # highest Linux x86_64 release in 1.7.0
+llvm.toolchain(llvm_version = "18.1.8")   # pinned LLVM release
 use_repo(llvm, "llvm_toolchain")
 # No register_toolchains() — opt in per-platform instead (see .bazelrc)
   </code></pre>
