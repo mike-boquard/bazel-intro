@@ -175,54 +175,61 @@ bazel cquery '//...'
 ```
 
 ```
-//:buildifier (0c99c1c)
-//:buildifier.check (0c99c1c)
-//:clang-format (796b1f2)
-//:gen_rust_project (796b1f2)
-//:refresh_compile_commands (0c99c1c)
-//:refresh_compile_commands.check_python_version.py (0c99c1c)
-//:refresh_compile_commands.py (0c99c1c)
-//cpp/app:app (0c99c1c)
-//cpp/greeter:greeter (0c99c1c)
-//cpp/greeter:greeter_test (796b1f2)
-//cpp/server:server (0c99c1c)
-//go/app:app (0c99c1c)
-//go/client:client (0c99c1c)
-//go/greeter:greeter (0c99c1c)
-//go/greeter:greeter_test (796b1f2)
-//proto:_greeter_cc_grpc_grpc_codegen (0c99c1c)
-//proto:greeter_cc_grpc (0c99c1c)
-//proto:greeter_cc_proto (0c99c1c)
-//proto:greeter_go_proto (0c99c1c)
-//proto:greeter_go_proto (92c35a6)
-//proto:greeter_proto (0c99c1c)
-//python/demo:demo (0c99c1c)
-//rust/app:app (0c99c1c)
-//rust/greeter:greeter (0c99c1c)
-//rust/greeter:greeter_test (796b1f2)
-//test/integration:greeter_integration_test (796b1f2)
+//:buildifier (3cfe13e)
+//:buildifier.check (3cfe13e)
+//:clang-format (c4687e5)
+//:gen_rust_project (c4687e5)
+//:refresh_compile_commands (3cfe13e)
+//:refresh_compile_commands.check_python_version.py (3cfe13e)
+//:refresh_compile_commands.py (3cfe13e)
+//cpp/app:app (3cfe13e)
+//cpp/greeter:greeter (3cfe13e)
+//cpp/greeter:greeter_test (c4687e5)
+//cpp/server:server (3cfe13e)
+//go/app:app (3cfe13e)
+//go/client:client (816c1d7)
+//go/greeter:greeter (3cfe13e)
+//go/greeter:greeter_test (c4687e5)
+//proto:_greeter_cc_grpc_grpc_codegen (3cfe13e)
+//proto:greeter_cc_grpc (3cfe13e)
+//proto:greeter_cc_proto (3cfe13e)
+//proto:greeter_go_proto (3cfe13e)
+//proto:greeter_go_proto (816c1d7)
+//proto:greeter_proto (3cfe13e)
+//proto:greeter_proto (944bc0f)
+//python/demo:demo (3cfe13e)
+//rust/app:app (3cfe13e)
+//rust/greeter:greeter (3cfe13e)
+//rust/greeter:greeter_test (c4687e5)
+//test/integration:greeter_integration_test (c4687e5)
 ```
 
-Two distinct hashes appear: one for the default build configuration (binaries and
-libraries) and one for the test configuration (targets built under `bazel test`).
-The exact hashes on your machine may differ from the above.
+Several distinct configuration hashes appear: the default config for binaries and
+libraries, a separate test config (targets built under `bazel test`), and extra
+exec/transition configs for tooling — note that `greeter_proto` and
+`greeter_go_proto` each show up under more than one config because the Go proto
+toolchain builds them differently than the C++ path. The exact hashes vary by
+machine and Bazel version.
 
 ### Show deps of a test target with configurations
 
+`deps()` is transitive, so the full result includes the entire toolchain and
+GoogleTest closure. Filter to this package to see the relevant nodes:
+
 ```bash
-bazel cquery 'deps(//cpp/greeter:greeter_test)'
+bazel cquery 'deps(//cpp/greeter:greeter_test)' 2>/dev/null | grep '^//cpp/greeter'
 ```
 
 ```
-//cpp/greeter:greeter_test (796b1f2)
-//cpp/greeter:greeter (0c99c1c)
+//cpp/greeter:greeter_test (c4687e5)
+//cpp/greeter:greeter (3cfe13e)
 //cpp/greeter:greeter_test.cc (null)
 //cpp/greeter:greeter.cc (null)
 //cpp/greeter:greeter.h (null)
 ```
 
-Notice that `greeter_test` (test config `796b1f2`) depends on `greeter` compiled
-in the default config (`0c99c1c`). Source files show `null` — they have no
+Notice that `greeter_test` (test config `c4687e5`) depends on `greeter` compiled
+in the default config (`3cfe13e`). Source files show `null` — they have no
 configuration because they are not built targets, just inputs. `bazel query`
 would collapse both config variants into a single node; `cquery` shows them
 separately, which matters when a library is pulled in by both test and non-test
@@ -247,12 +254,11 @@ bazel aquery '//cpp/greeter:greeter' --output=text 2>/dev/null | grep 'Mnemonic:
 ```
   Mnemonic: CppModuleMap
   Mnemonic: CppCompile
-  Mnemonic: FileWrite
   Mnemonic: CppArchive
 ```
 
 Each mnemonic is one build action: generating the module map, compiling the `.cc`
-file, writing auxiliary files, and archiving into a `.a` static library.
+file, and archiving the object into a `.a` static library.
 
 ### Inspect a specific action's inputs and outputs
 

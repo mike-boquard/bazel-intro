@@ -315,8 +315,6 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "spdlog",
     hdrs = glob(["include/**/*.h"]),
-    # Header-only mode — no separate compile step.
-    defines = ["SPDLOG_HEADER_ONLY"],
     # Makes #include "spdlog/spdlog.h" resolve.
     includes = ["include"],
     visibility = ["//visibility:public"],
@@ -324,7 +322,7 @@ cc_library(
       </code></pre>
     </div>
   </div>
-  <p class="dim" style="margin-top:.5em;"><code>build_file</code> points at <code>spdlog.BUILD</code> because spdlog ships no Bazel rules of its own. The label resolves only because <code>third_party/</code> is itself a package (it has an empty <code>BUILD.bazel</code>).</p>
+  <p class="dim" style="margin-top:.5em;"><code>build_file</code> points at <code>spdlog.BUILD</code> because spdlog ships no Bazel rules of its own. spdlog is header-only by default (it defines <code>SPDLOG_HEADER_ONLY</code> itself), so no <code>srcs</code> and no <code>defines</code> are needed. The label resolves only because <code>third_party/</code> is itself a package (it has an empty <code>BUILD.bazel</code>).</p>
 </section>
 
 <!-- 11 ── C++ BUILD FILE ────────────────────────────────────────────────────  -->
@@ -421,7 +419,7 @@ message HelloReply   { string message = 1; }
   <h2>Proto build targets</h2>
   <p class="small" style="margin-bottom:.4em;"><code>proto/BUILD.bazel</code> turns the single <code>.proto</code> file into four targets — a language-neutral base plus C++ message, C++ service-stub, and Go targets:</p>
   <pre><code class="language-python" data-trim>
-# proto/BUILD.bazel — in Bazel 8 these rules must be loaded explicitly
+# proto/BUILD.bazel — Bazel 8+ requires these rules to be loaded explicitly
 load("@grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("@protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@protobuf//bazel:proto_library.bzl", "proto_library")
@@ -857,7 +855,7 @@ rust_test(name = "greeter_test", crate = ":greeter")
 <!-- 28 ── FAQ: PINNING A COMPILER ─────────────────────────────────────────  -->
 <section>
   <h2>FAQ: Can I pin a specific Clang version?</h2>
-  <p class="small">Yes — <code>toolchains_llvm</code> from the BCR downloads an exact pre-built LLVM release. This repo uses LLVM 18.1.8 for Linux CI; macOS uses Xcode Clang (pre-built arm64 binaries top out at LLVM 17 on Apple Silicon).</p>
+  <p class="small">Yes — <code>toolchains_llvm</code> from the BCR downloads an exact pre-built LLVM release. This repo wires up LLVM 18.1.8 as an opt-in toolchain for reproducible Linux x86_64 builds (<code>--config=clang</code>); the default build (and CI) uses the host compiler. macOS uses Xcode Clang (pre-built arm64 binaries top out at LLVM 17 on Apple Silicon).</p>
   <pre><code class="language-python" data-trim>
 # MODULE.bazel
 bazel_dep(name = "toolchains_llvm", version = "1.8.0")
@@ -868,12 +866,12 @@ use_repo(llvm, "llvm_toolchain")
 # No register_toolchains() — opt in per-platform instead (see .bazelrc)
   </code></pre>
   <pre><code class="language-ini" data-trim>
-# .bazelrc — opt-in for Linux CI
+# .bazelrc — opt-in pinned-LLVM config (Linux x86_64)
 build:clang --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
   </code></pre>
   <pre><code class="language-bash" data-trim>
-bazel build --config=clang //cpp/...   # Linux: uses LLVM 18.1.8
-bazel build //cpp/...                  # macOS: uses Xcode Clang
+bazel build --config=clang //cpp/...   # opt in to pinned LLVM 18.1.8 (Linux)
+bazel build //cpp/...                  # default: host compiler (gcc / Xcode Clang)
   </code></pre>
 </section>
 
@@ -923,6 +921,10 @@ ColumnLimit: 100
   <pre><code class="language-ini" data-trim>
 # .bazelrc — -Wall -Werror for our sources under cpp/, not external deps
 build --per_file_copt=^cpp/.*\.cc$@-Wall,-Werror
+  </code></pre>
+  <p class="small" style="margin-top:.4em;">That scopes <em>where</em> the flags apply — but a first-party file that <code>#include</code>s a third-party header still sees that header's warnings. Route external headers through <code>-isystem</code> so they don't count under <code>-Werror</code>:</p>
+  <pre><code class="language-ini" data-trim>
+build --features=external_include_paths
   </code></pre>
   <p class="small" style="margin-top:.4em;"><strong>Sanitizers</strong> — add a named config to <code>.bazelrc</code>:</p>
   <pre><code class="language-ini" data-trim>
