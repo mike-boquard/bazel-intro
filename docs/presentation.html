@@ -1001,13 +1001,15 @@ cmake(
       <p>Build their existing CMake/autoconf build inside Bazel.</p>
     </div>
   </div>
-  <p class="small"><strong>Vendored dependencies</strong> — wrap a local directory in a module extension (Bzlmod requires these calls inside an extension function, not bare in <code>MODULE.bazel</code>):</p>
+  <p class="small"><strong>Vendored dependencies</strong> — two distinct cases:</p>
   <pre><code class="language-python" data-trim>
-# third_party/extensions.bzl — inside a module extension function
-local_repository(name = "mylib", path = "vendor/mylib")
-
-# Or use local_path_override to redirect a BCR module to a local fork
+# MODULE.bazel — redirect a BCR module to a local checkout/fork.
+# local_path_override is a top-level module directive, not an extension call.
 local_path_override(module_name = "mylib", path = "vendor/mylib")
+
+# third_party/extensions.bzl — vendor a non-module local dir from inside an
+# extension (local_repository is a repo rule, like http_archive).
+local_repository(name = "mylib", path = "vendor/mylib")
   </code></pre>
 </section>
 
