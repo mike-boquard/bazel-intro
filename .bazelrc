@@ -1,6 +1,24 @@
 # Build correctness
 build --cxxopt=-std=c++17
 
+# Treat headers from external repositories as system headers (-isystem) instead
+# of -I/-iquote.  This keeps warnings originating inside third-party headers
+# (spdlog/fmt, grpc, c-ares) from tripping our -Werror, while our own first-party
+# headers still get full warning coverage.
+build --features=external_include_paths
+
+# Disable Bazel's layering_check.  grpc 1.76's macOS CoreFoundation event engine
+# (cf_event_engine) includes a couple of internal headers without declaring the
+# dep, which only fails under layering_check — an upstream issue we can't fix.
+build --features=-layering_check
+
+# Bazel 9 removed the legacy native cc_*/py_* rules; they must be loaded from
+# rules_cc / rules_python.  The hedron_compile_commands tool (non-BCR, no Bazel 9
+# release yet) still calls them as native rules, so autoload those symbols
+# externally for backward compatibility.  Our own BUILD files load the rules
+# explicitly and are unaffected by this shim.
+common --incompatible_autoload_externally=+py_binary,+py_library,+py_test,+cc_binary,+cc_library,+cc_test
+
 # Treat warnings as errors for our own C++ code only.
 # A global --cxxopt=-Werror would also apply to external deps (abseil, grpc,
 # protobuf, spdlog), which emit warnings we cannot fix.  --per_file_copt scopes

@@ -15,8 +15,8 @@ module(
 # ── Core utilities ─────────────────────────────────────────────────────────────
 # bazel_skylib   — common Starlark helper functions used by many rule sets.
 # rules_cc       — cc_library / cc_binary / cc_test rules for C++ targets.
-bazel_dep(name = "bazel_skylib", version = "1.7.1")
-bazel_dep(name = "rules_cc", version = "0.0.10")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "rules_cc", version = "0.2.20")
 
 # ── C++ testing and libraries (BCR) ──────────────────────────────────────────
 # googletest  — Google's C++ unit testing framework.
@@ -25,8 +25,8 @@ bazel_dep(name = "rules_cc", version = "0.0.10")
 # abseil-cpp  — Google's C++ utility library (strings, containers, etc.).
 #               //cpp/greeter uses absl::StrCat from this module.
 #               BCR: https://registry.bazel.build/modules/abseil-cpp
-bazel_dep(name = "googletest", version = "1.15.2")
-bazel_dep(name = "abseil-cpp", version = "20240722.0")
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+bazel_dep(name = "abseil-cpp", version = "20250814.1")
 
 # ── Proto and gRPC (BCR) ──────────────────────────────────────────────────────
 # protobuf — proto_library rule, protoc compiler, and cc_proto_library support.
@@ -36,9 +36,14 @@ bazel_dep(name = "abseil-cpp", version = "20240722.0")
 # grpc      — C++ gRPC runtime and the cc_grpc_library codegen macro.
 #             The Go gRPC runtime comes from go.mod (google.golang.org/grpc),
 #             not from this module.
+#             Pinned to 1.76.0.bcr.1 — the newest grpc that resolves cleanly
+#             under Bazel 9.  grpc 1.78.0+ pulls an envoy_api/googleapis
+#             combination mid-migration on the BCR (the googleapis
+#             `switched_rules` extension no longer generates the
+#             `com_google_googleapis_imports` repo that envoy_api imports).
 #             BCR: https://registry.bazel.build/modules/grpc
-bazel_dep(name = "protobuf", version = "29.3")
-bazel_dep(name = "grpc", version = "1.69.0")
+bazel_dep(name = "protobuf", version = "33.6")
+bazel_dep(name = "grpc", version = "1.76.0.bcr.1")
 
 # ── C++ toolchain: LLVM/Clang (BCR) ──────────────────────────────────────────
 # toolchains_llvm downloads a specific pre-built LLVM release from GitHub and
@@ -54,7 +59,7 @@ bazel_dep(name = "grpc", version = "1.69.0")
 # Available Linux x86_64 versions: run
 #   grep x86_64-linux external/toolchains_llvm*/llvm_distributions.bzl
 # BCR: https://registry.bazel.build/modules/toolchains_llvm
-bazel_dep(name = "toolchains_llvm", version = "1.7.0")
+bazel_dep(name = "toolchains_llvm", version = "1.8.0")
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(llvm_version = "18.1.8")
@@ -72,15 +77,15 @@ use_repo(non_registry, "hedron_compile_commands", "spdlog")
 #             BCR: https://registry.bazel.build/modules/rules_go
 # gazelle   — generates Bazel BUILD files from Go source and manages go.mod.
 #             BCR: https://registry.bazel.build/modules/gazelle
-bazel_dep(name = "rules_go", version = "0.50.1")
-bazel_dep(name = "gazelle", version = "0.39.1")
+bazel_dep(name = "rules_go", version = "0.61.1")
+bazel_dep(name = "gazelle", version = "0.51.3")
 
 # Download the Go SDK.  No separate Go installation is needed — Bazel fetches
 # and caches the SDK automatically via the go_sdk extension in rules_go.
 # (bazelisk manages the Bazel version; the Go SDK is separate.)
 # Docs: https://github.com/bazelbuild/rules_go/blob/main/docs/go/toolchains.md
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
-go_sdk.download(version = "1.22.5")
+go_sdk.download(version = "1.26.4")
 
 # ── Go module dependencies (via go.mod) ───────────────────────────────────────
 # Go packages are NOT distributed through the BCR.  They are declared in
@@ -105,7 +110,7 @@ go_sdk.download(version = "1.22.5")
 #   3. bazel mod tidy  (may update use_repo if new packages introduce new repos)
 #
 # BCR: https://registry.bazel.build/modules/rules_python
-bazel_dep(name = "rules_python", version = "1.0.0")
+bazel_dep(name = "rules_python", version = "2.0.3")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(python_version = "3.12")
@@ -168,7 +173,7 @@ bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = Tr
 # in Bazel 8+ and requires an explicit load from this module going forward.
 #
 # BCR: https://registry.bazel.build/modules/rules_shell
-bazel_dep(name = "rules_shell", version = "0.3.0")
+bazel_dep(name = "rules_shell", version = "0.8.0")
 
 # ── Rust crate dependencies (crates.io) ───────────────────────────────────────
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
