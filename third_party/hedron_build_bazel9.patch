@@ -1,0 +1,10 @@
+--- a/BUILD
++++ b/BUILD
+@@ -27,6 +27,7 @@
+ 
+ exports_files(["refresh.template.py", "check_python_version.template.py"])  # For implicit use by the refresh_compile_commands macro, not direct use.
+ 
++load("@rules_cc//cc:defs.bzl", "cc_binary")
+ cc_binary(
+     name = "print_args",
+     srcs = ["print_args.cpp"],

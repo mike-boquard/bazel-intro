@@ -1064,7 +1064,7 @@ local_path_override(module_name = "mylib", path = "vendor/mylib")
       <p>Bumping <code>.bazelversion</code> can break builds. The BCR compatibility matrix and Bzlmod mitigate this, but it's not frictionless. Pin and upgrade deliberately.</p>
     </div>
   </div>
-  <p class="small" style="margin-top:.5em;"><strong>Concrete example — this repo's 7.4.1 → 9.1.1 jump:</strong> grpc and protobuf had to move in lockstep (a newer protobuf dropped a <code>.bzl</code> file grpc still loads); rules_rust had to stay one minor back (protobuf loads a file a later version renamed); the non-BCR clangd tool needed an autoload shim because Bazel 9 removed the native <code>cc_*/py_*</code> rules; and a stricter host Clang forced <code>external_include_paths</code> + <code>--features=-layering_check</code>. None hard alone — but you meet them one failed build at a time.</p>
+  <p class="small" style="margin-top:.5em;"><strong>Concrete example — this repo's 7.4.1 → 9.1.1 jump:</strong> grpc and protobuf had to move in lockstep (a newer protobuf dropped a <code>.bzl</code> file grpc still loads); rules_rust had to stay one minor back (protobuf loads a file a later version renamed); the non-BCR clangd tool needed a small patch (adding <code>load()</code> statements) because Bazel 9 removed the native <code>cc_*/py_*</code> rules; and a stricter host Clang forced <code>external_include_paths</code> + <code>--features=-layering_check</code>. None hard alone — but you meet them one failed build at a time.</p>
   <p class="dim" style="margin-top:.4em;">These are real. Worth setting expectations with the team upfront rather than discovering them in week two.</p>
 </section>
 

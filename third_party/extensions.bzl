@@ -30,12 +30,24 @@ def _non_registry_deps_impl(_ctx):
     # hedron_compile_commands: generates compile_commands.json for clangd.
     # Not in the BCR, so fetched from GitHub.  The repo ships its own BUILD
     # file so no build_file injection is needed.
+    #
+    # The pinned commit predates Bazel 9 and still calls the native cc_binary /
+    # py_binary rules, which Bazel 9 removed.  Rather than re-enable them
+    # globally with --incompatible_autoload_externally, we patch the two files
+    # that use them to load the rules from rules_cc / rules_python.
     # Docs: https://github.com/hedronvision/bazel-compile-commands-extractor
     http_archive(
         name = "hedron_compile_commands",
         url = "https://github.com/hedronvision/bazel-compile-commands-extractor/archive/abb61a688167623088f8768cc9264798df6a9d10.tar.gz",
         sha256 = "1b08abffbfbe89f6dbee6a5b33753792e8004f6a36f37c0f72115bec86e68724",
         strip_prefix = "bazel-compile-commands-extractor-abb61a688167623088f8768cc9264798df6a9d10",
+        patch_args = ["-p1"],
+        # Two single-file patches (not one multi-file diff): Bazel's built-in
+        # patcher mishandles multi-file unified diffs.
+        patches = [
+            Label("//third_party:hedron_build_bazel9.patch"),
+            Label("//third_party:hedron_refresh_bazel9.patch"),
+        ],
     )
 
 non_registry = module_extension(
