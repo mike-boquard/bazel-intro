@@ -174,8 +174,8 @@ bazel build //cpp/...
 
 The toolchain is declared in MODULE.bazel (`bazel_dep(name = "toolchains_llvm", ...)`).
 On Linux the `--config=clang` flag tells Bazel to prefer `@llvm_toolchain//:cc-toolchain-x86_64-linux`.
-On macOS, pre-built LLVM arm64 binaries in `toolchains_llvm` 1.8.0 top out at version
-17 and have compatibility issues on Apple Silicon, so the system compiler is used.
+On macOS the pinned LLVM toolchain is intentionally not registered; the system
+Xcode Clang is used instead, which builds every dependency cleanly (including gRPC).
 
 ## Python (hermetic demo)
 

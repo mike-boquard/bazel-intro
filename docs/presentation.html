@@ -213,7 +213,7 @@ bazel aquery //cpp/app:app
 <!-- 7 ── WHAT IS BZLMOD ────────────────────────────────────────────────────  -->
 <section>
   <h2>What is Bzlmod?</h2>
-  <p class="small" style="margin-bottom:.5em;">Bzlmod is Bazel's dependency management system, introduced in Bazel 5, the default since Bazel 6, and the <em>only</em> option in Bazel 9 — the legacy <code>WORKSPACE</code> file was removed entirely. This repo targets Bazel 9.1.1.</p>
+  <p class="small" style="margin-bottom:.5em;">Bzlmod is Bazel's dependency management system, introduced in Bazel 5, the default since Bazel 7, and the <em>only</em> option in Bazel 9 — the legacy <code>WORKSPACE</code> file was removed entirely. This repo targets Bazel 9.1.1.</p>
   <div class="two-col">
     <div class="card bad">
       <h4>WORKSPACE (old)</h4>
@@ -855,7 +855,7 @@ rust_test(name = "greeter_test", crate = ":greeter")
 <!-- 28 ── FAQ: PINNING A COMPILER ─────────────────────────────────────────  -->
 <section>
   <h2>FAQ: Can I pin a specific Clang version?</h2>
-  <p class="small">Yes — <code>toolchains_llvm</code> from the BCR downloads an exact pre-built LLVM release. This repo wires up LLVM 18.1.8 as an opt-in toolchain for reproducible Linux x86_64 builds (<code>--config=clang</code>); the default build (and CI) uses the host compiler. macOS uses Xcode Clang (pre-built arm64 binaries top out at LLVM 17 on Apple Silicon).</p>
+  <p class="small">Yes — <code>toolchains_llvm</code> from the BCR downloads an exact pre-built LLVM release. This repo wires up LLVM 18.1.8 as an opt-in toolchain for reproducible Linux x86_64 builds (<code>--config=clang</code>); the default build (and CI) uses the host compiler. On macOS the pinned toolchain is left unregistered and the host Xcode Clang is used, which builds every dependency cleanly (including gRPC).</p>
   <pre><code class="language-python" data-trim>
 # MODULE.bazel
 bazel_dep(name = "toolchains_llvm", version = "1.8.0")

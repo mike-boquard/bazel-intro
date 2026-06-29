@@ -51,8 +51,10 @@ bazel_dep(name = "grpc", version = "1.76.0.bcr.1")
 # ── C++ toolchain: LLVM/Clang (BCR) ──────────────────────────────────────────
 # toolchains_llvm downloads a specific pre-built LLVM release from GitHub and
 # makes it available as a named C++ toolchain.  It is NOT globally registered
-# here because the pre-built macOS arm64 binaries in toolchains_llvm 1.8.0 top
-# out at LLVM 17 and crash while linking complex projects on Apple Silicon.
+# here: the pinned toolchain is wired for Linux x86_64 only (see .bazelrc).
+# On macOS the default build uses the host Xcode Clang, which builds every
+# dependency cleanly (including gRPC); the pinned LLVM toolchain is not
+# registered there.
 #
 # It is opt-in: the default build (and CI) uses the host compiler; pass
 # --config=clang to use the pinned LLVM toolchain on Linux x86_64.
